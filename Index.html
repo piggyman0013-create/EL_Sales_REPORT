@@ -246,6 +246,16 @@ tr:hover td{background:var(--s2);color:var(--t1)}
     </div>
   </div>
 
+  <!-- GPS Location Preview -->
+  <div id="gps-box" style="background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:10px;font-size:13px">
+    <div id="gps-icon" style="font-size:20px;flex-shrink:0">📍</div>
+    <div style="flex:1">
+      <div style="font-weight:500;color:var(--t1);margin-bottom:2px" id="gps-label">ยังไม่ได้ดึงตำแหน่ง</div>
+      <div style="font-size:11px;color:var(--t3)" id="gps-sub">ระบบจะขอ GPS อัตโนมัติเมื่อกดบันทึก</div>
+    </div>
+    <button class="bn bs bsm" onclick="previewGPS()" id="gps-btn" style="flex-shrink:0">ดึงตำแหน่งล่วงหน้า</button>
+  </div>
+
   <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
     <span class="sv" id="svd"></span>
     <button class="bn bs" onclick="clearDraft();resetForm()">ล้างฟอร์ม</button>
@@ -672,31 +682,36 @@ async function submitForm(){
   const btn=document.getElementById('bsub');
   btn.disabled=true;btn.innerHTML='<span class="sp2"></span> กำลังขอตำแหน่ง GPS...';
 
-  // ขอ GPS ก่อน submit
-  let lat='',lng='',locLabel='ไม่ได้รับอนุญาต',mapsUrl='';
-  try{
-    const pos = await new Promise((res,rej)=>
-      navigator.geolocation.getCurrentPosition(res,rej,{timeout:8000,maximumAge:0})
-    );
-    lat = pos.coords.latitude.toFixed(6);
-    lng = pos.coords.longitude.toFixed(6);
-    mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
-    // Reverse geocode ด้วย nominatim (ฟรี ไม่ต้อง API key)
-    try{
-      const geoRes = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=th`,
-        {headers:{'User-Agent':'ELSalesApp'}}
+  // ใช้ GPS ที่ดึงไว้แล้ว หรือดึงใหม่ถ้ายังไม่มี
+  let lat='', lng='', locLabel='ไม่ได้รับอนุญาต', mapsUrl='';
+  if(_gpsCache) {
+    ({lat, lng, locLabel, mapsUrl} = _gpsCache);
+  } else {
+    btn.innerHTML='<span class="sp2"></span> กำลังขอตำแหน่ง GPS...';
+    try {
+      const pos = await new Promise((res,rej) =>
+        navigator.geolocation.getCurrentPosition(res,rej,{timeout:8000,maximumAge:30000})
       );
-      const geoJson = await geoRes.json();
-      const a = geoJson.address||{};
-      locLabel = [a.road||a.pedestrian, a.suburb||a.neighbourhood, a.city||a.town||a.village, a.state]
-        .filter(Boolean).join(', ') || geoJson.display_name?.split(',').slice(0,3).join(',') || `${lat},${lng}`;
-    }catch(e){ locLabel=`${lat}, ${lng}`; }
-    toast('📍 บันทึกตำแหน่งแล้ว — กำลังส่งรายงาน...');
-  }catch(e){
-    // ถ้าปฏิเสธ GPS — ยังส่งรายงานได้ แต่ไม่มีตำแหน่ง
-    locLabel='ไม่ได้รับอนุญาต';
-    toast('⚠️ ไม่ได้รับ GPS — ส่งรายงานต่อโดยไม่มีตำแหน่ง');
+      lat = pos.coords.latitude.toFixed(6);
+      lng = pos.coords.longitude.toFixed(6);
+      mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
+      try {
+        const r = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=th`,
+          {headers:{'User-Agent':'ELSalesApp'}}
+        );
+        const j = await r.json();
+        const a = j.address||{};
+        locLabel = [a.road||a.pedestrian, a.suburb||a.neighbourhood,
+          a.city||a.town||a.village, a.state].filter(Boolean).join(', ')
+          || j.display_name?.split(',').slice(0,3).join(',') || `${lat},${lng}`;
+      } catch(e){ locLabel=`${lat}, ${lng}`; }
+      _gpsCache = {lat, lng, locLabel, mapsUrl};
+      setGpsUI('ok', locLabel, '', mapsUrl);
+    } catch(e) {
+      locLabel='ไม่ได้รับอนุญาต';
+      setGpsUI('deny','ไม่สามารถดึงตำแหน่งได้','');
+    }
   }
 
   btn.innerHTML='<span class="sp2"></span> กำลังบันทึก...';
@@ -746,9 +761,67 @@ async function submitForm(){
   finally{btn.disabled=false;btn.textContent='บันทึกรายงาน';}
 }
 
-function resetForm(){['fz','frp','fh','fdp','fct','fps','fop','fbg','fmn','fdz','fdpd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});['fht','fbd','ftel','fdt','fpr','fdr','fcn'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('fd').value=new Date().toISOString().split('T')[0];document.getElementById('gnw').style.display='none';document.querySelectorAll('.fe').forEach(e=>e.classList.remove('on'));document.querySelectorAll('.er').forEach(e=>e.classList.remove('er'));}
+function resetForm(){
+  ['fz','frp','fh','fdp','fct','fps','fop','fbg','fmn','fdz','fdpd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fht','fbd','ftel','fdt','fpr','fdr','fcn'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('fd').value=new Date().toISOString().split('T')[0];
+  document.getElementById('gnw').style.display='none';
+  document.querySelectorAll('.fe').forEach(e=>e.classList.remove('on'));
+  document.querySelectorAll('.er').forEach(e=>e.classList.remove('er'));
+  // reset GPS
+  _gpsCache=null;
+  setGpsUI('idle','ยังไม่ได้ดึงตำแหน่ง','ระบบจะขอ GPS อัตโนมัติเมื่อกดบันทึก');
+}
 
-// LINE NOTIFY
+// GPS STATE — เก็บไว้ใช้ตอน submit
+let _gpsCache = null;
+
+function setGpsUI(state, label, sub, mapsUrl) {
+  const icons = { loading:'⏳', ok:'📍', deny:'⚠️', idle:'📍' };
+  const colors = { ok:'var(--gn)', deny:'var(--am)', loading:'var(--t2)', idle:'var(--t3)' };
+  document.getElementById('gps-icon').textContent = icons[state]||'📍';
+  document.getElementById('gps-label').textContent = label;
+  document.getElementById('gps-label').style.color = colors[state]||'var(--t1)';
+  document.getElementById('gps-sub').innerHTML = mapsUrl
+    ? `<a href="${mapsUrl}" target="_blank" style="color:var(--acc2);text-decoration:none">เปิดใน Google Maps →</a>`
+    : sub||'';
+  const btn = document.getElementById('gps-btn');
+  if(btn) btn.textContent = state==='ok' ? '🔄 ดึงใหม่' : 'ดึงตำแหน่งล่วงหน้า';
+}
+
+async function previewGPS() {
+  setGpsUI('loading','กำลังดึงตำแหน่ง GPS...','รอสักครู่...');
+  document.getElementById('gps-btn').disabled = true;
+  try {
+    const pos = await new Promise((res,rej) =>
+      navigator.geolocation.getCurrentPosition(res, rej, {timeout:10000, maximumAge:0})
+    );
+    const lat = pos.coords.latitude.toFixed(6);
+    const lng = pos.coords.longitude.toFixed(6);
+    const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
+    let locLabel = `${lat}, ${lng}`;
+    // reverse geocode
+    try {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=th`,
+        { headers:{ 'User-Agent':'ELSalesApp' } }
+      );
+      const j = await r.json();
+      const a = j.address||{};
+      locLabel = [a.road||a.pedestrian, a.suburb||a.neighbourhood||a.quarter,
+        a.city||a.town||a.village, a.state].filter(Boolean).join(', ')
+        || j.display_name?.split(',').slice(0,3).join(',') || locLabel;
+    } catch(e) {}
+    _gpsCache = { lat, lng, locLabel, mapsUrl };
+    setGpsUI('ok', locLabel, '', mapsUrl);
+    toast('📍 ดึงตำแหน่งสำเร็จ');
+  } catch(e) {
+    _gpsCache = { lat:'', lng:'', locLabel:'ไม่ได้รับอนุญาต', mapsUrl:'' };
+    setGpsUI('deny','ไม่สามารถดึงตำแหน่งได้','กด Allow GPS ใน browser แล้วลองใหม่');
+    toast('⚠️ ไม่ได้รับ GPS permission', true);
+  }
+  document.getElementById('gps-btn').disabled = false;
+}
 async function sendLN(d){const tok=localStorage.getItem(LNK);if(!tok)return;const msg=`\n📋 รายงานใหม่ — Earthline\n👤 ${d.rep} (${d.zone})\n🏥 ${d.hospital}\n📦 New Opp: ${d.newOppProduct||'-'}\n🧪 Demo: ${d.demoProduct||'-'}\n⏰ ${new Date().toLocaleString('th-TH')}`;try{await fetch('https://notify-api.line.me/api/notify',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/x-www-form-urlencoded'},body:'message='+encodeURIComponent(msg)});}catch(e){}}
 function saveLn(){const t=document.getElementById('lnt').value.trim();if(!t)return;localStorage.setItem(LNK,t);toast('บันทึก Token แล้ว');}
 async function testLn(){const tok=localStorage.getItem(LNK);if(!tok){toast('บันทึก Token ก่อน',true);return;}const r=document.getElementById('lnr');r.textContent='⏳ กำลังส่ง...';try{await fetch('https://notify-api.line.me/api/notify',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/x-www-form-urlencoded'},body:'message='+encodeURIComponent('\n✅ ทดสอบ Earthline Sales Notify สำเร็จ!')});r.textContent='✅ ส่งสำเร็จ';r.style.color='var(--gn)';}catch(e){r.textContent='❌ '+e.message;r.style.color='var(--rd)';}}
