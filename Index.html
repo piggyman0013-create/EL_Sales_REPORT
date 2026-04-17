@@ -293,7 +293,7 @@ tr:hover td{background:var(--s2);color:var(--t1)}
   <div class="cd" style="margin-bottom:14px"><div class="ch">ผลงานประจำเดือน</div><div id="drl"></div></div>
   <div class="cd">
     <div class="ch">รายงานทั้งหมด</div>
-    <div class="tw"><table><thead><tr><th>วันที่</th><th>เขต</th><th>ผู้แทน</th><th>โรงพยาบาล</th><th>New Opp</th><th>Demo</th></tr></thead>
+    <div class="tw"><table><thead><tr><th>วันที่</th><th>เขต</th><th>ผู้แทน</th><th>โรงพยาบาล</th><th>New Opp</th><th>Demo</th><th>📍 ตำแหน่ง</th></tr></thead>
     <tbody id="dtb"></tbody></table></div>
     <div style="margin-top:10px;text-align:right">
       <button class="bn bs bsm" onclick="exportCSV()">⬇ Export CSV</button>
@@ -669,7 +669,37 @@ function valid(){const fs=[{id:'fz',eid:'ez'},{id:'frp',eid:'er'},{id:'fh',eid:'
 
 async function submitForm(){
   if(!valid()){toast('กรุณากรอกข้อมูลที่จำเป็น (*)',true);return;}
-  const btn=document.getElementById('bsub');btn.disabled=true;btn.innerHTML='<span class="sp2"></span> กำลังบันทึก...';
+  const btn=document.getElementById('bsub');
+  btn.disabled=true;btn.innerHTML='<span class="sp2"></span> กำลังขอตำแหน่ง GPS...';
+
+  // ขอ GPS ก่อน submit
+  let lat='',lng='',locLabel='ไม่ได้รับอนุญาต',mapsUrl='';
+  try{
+    const pos = await new Promise((res,rej)=>
+      navigator.geolocation.getCurrentPosition(res,rej,{timeout:8000,maximumAge:0})
+    );
+    lat = pos.coords.latitude.toFixed(6);
+    lng = pos.coords.longitude.toFixed(6);
+    mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
+    // Reverse geocode ด้วย nominatim (ฟรี ไม่ต้อง API key)
+    try{
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=th`,
+        {headers:{'User-Agent':'ELSalesApp'}}
+      );
+      const geoJson = await geoRes.json();
+      const a = geoJson.address||{};
+      locLabel = [a.road||a.pedestrian, a.suburb||a.neighbourhood, a.city||a.town||a.village, a.state]
+        .filter(Boolean).join(', ') || geoJson.display_name?.split(',').slice(0,3).join(',') || `${lat},${lng}`;
+    }catch(e){ locLabel=`${lat}, ${lng}`; }
+    toast('📍 บันทึกตำแหน่งแล้ว — กำลังส่งรายงาน...');
+  }catch(e){
+    // ถ้าปฏิเสธ GPS — ยังส่งรายงานได้ แต่ไม่มีตำแหน่ง
+    locLabel='ไม่ได้รับอนุญาต';
+    toast('⚠️ ไม่ได้รับ GPS — ส่งรายงานต่อโดยไม่มีตำแหน่ง');
+  }
+
+  btn.innerHTML='<span class="sp2"></span> กำลังบันทึก...';
   const cs=document.getElementById('fct');const isN=cs.value==='__new__';
   let cn=isN?document.getElementById('fcn').value:(cs.options[cs.selectedIndex]?.dataset?.n||'');
   const hosp2=document.getElementById('fh').value;
@@ -678,14 +708,43 @@ async function submitForm(){
   if(isN&&cn){
     await saveNewContact(hosp2,cn,pos2,tel2);
   } else if(!isN&&cn){
-    // อัปเดตข้อมูลถ้าแก้ไขตำแหน่ง/เบอร์
     addCtsLocal(hosp2,{name:cn,position:pos2,phone:tel2});
     if(GAS) apiP('updateContact',{hospital:hosp2,name:cn,position:pos2,phone:tel2}).catch(()=>{});
   }
-  const data={date:document.getElementById('fd').value,zone:document.getElementById('fz').value,rep:document.getElementById('frp').value,hospital:document.getElementById('fh').value,hospType:document.getElementById('fht').value,beds:document.getElementById('fbd').value,dept:document.getElementById('fdp').value,contactName:cn,position:document.getElementById('fps').value,phone:document.getElementById('ftel').value,detail:document.getElementById('fdt').value,newOppProduct:document.getElementById('fop').value,newOppPrice:document.getElementById('fpr').value,budgetType:document.getElementById('fbg').value,fiscalYear:document.getElementById('ffs').value,deliveryMonth:document.getElementById('fmn').value,deliveryYear:document.getElementById('fyr').value,demoZone:document.getElementById('fdz').value,demoProduct:document.getElementById('fdpd').value,demoResult:document.getElementById('fdr').value,submittedBy:CU?.u};
-  try{const r=await apiP('addRecord',data);if(!r.ok)throw new Error(r.error);addA('SUBMIT',CU?.u,data.hospital+'|'+(data.newOppProduct||'-')+'|Demo:'+(data.demoProduct||'-'));sendLN(data);clearDraft();resetForm();toast('บันทึกรายงานสำเร็จ ✓');}
-  catch(e){toast('บันทึกไม่สำเร็จ: '+e.message,true);}
-  finally{btn.disabled=false;btn.textContent='บันทึกรายงาน';}}
+  const data={
+    date:document.getElementById('fd').value,
+    zone:document.getElementById('fz').value,
+    rep:document.getElementById('frp').value,
+    hospital:document.getElementById('fh').value,
+    hospType:document.getElementById('fht').value,
+    beds:document.getElementById('fbd').value,
+    dept:document.getElementById('fdp').value,
+    contactName:cn,
+    position:document.getElementById('fps').value,
+    phone:document.getElementById('ftel').value,
+    detail:document.getElementById('fdt').value,
+    newOppProduct:document.getElementById('fop').value,
+    newOppPrice:document.getElementById('fpr').value,
+    budgetType:document.getElementById('fbg').value,
+    fiscalYear:document.getElementById('ffs').value,
+    deliveryMonth:document.getElementById('fmn').value,
+    deliveryYear:document.getElementById('fyr').value,
+    demoZone:document.getElementById('fdz').value,
+    demoProduct:document.getElementById('fdpd').value,
+    demoResult:document.getElementById('fdr').value,
+    submittedBy:CU?.u,
+    // GPS fields
+    lat, lng, locLabel, mapsUrl
+  };
+  try{
+    const r=await apiP('addRecord',data);
+    if(!r.ok)throw new Error(r.error);
+    addA('SUBMIT',CU?.u,`${data.hospital} | GPS:${locLabel}`);
+    sendLN(data);clearDraft();resetForm();
+    toast('บันทึกรายงานสำเร็จ ✓' + (lat?` 📍 ${locLabel.split(',')[0]}`:''));
+  }catch(e){toast('บันทึกไม่สำเร็จ: '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='บันทึกรายงาน';}
+}
 
 function resetForm(){['fz','frp','fh','fdp','fct','fps','fop','fbg','fmn','fdz','fdpd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});['fht','fbd','ftel','fdt','fpr','fdr','fcn'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('fd').value=new Date().toISOString().split('T')[0];document.getElementById('gnw').style.display='none';document.querySelectorAll('.fe').forEach(e=>e.classList.remove('on'));document.querySelectorAll('.er').forEach(e=>e.classList.remove('er'));}
 
@@ -721,9 +780,30 @@ function renderDash(){
   const rm={};recs.forEach(r=>{if(!r.rep)return;if(!rm[r.rep])rm[r.rep]={name:r.rep,zone:r.zone,v:new Set(),o:0,d:0,val:0};rm[r.rep].v.add(r.hospital);if(r.newOppProduct){rm[r.rep].o++;rm[r.rep].val+=parseFloat(r.newOppPrice)||0;}if(r.demoProduct)rm[r.rep].d++;});
   const ac=['var(--acc)','var(--gn)','var(--am)','var(--pu)','var(--acc2)','var(--rd)'];
   document.getElementById('drl').innerHTML=Object.values(rm).sort((a,b)=>b.o-a.o).map((r,i)=>`<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--b1)"><div style="width:32px;height:32px;border-radius:50%;background:var(--s2);border:1px solid ${ac[i%ac.length]}44;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:${ac[i%ac.length]};flex-shrink:0">${r.name.charAt(0)}</div><div style="flex:1"><div style="font-size:14px;font-weight:500">${r.name}</div><div style="font-size:12px;color:var(--t3)">เขต ${r.zone||'—'}</div></div><div style="display:flex;gap:14px">${[['เข้าพบ',r.v.size,'var(--acc)'],['New Opp',r.o,'var(--gn)'],['Demo',r.d,'var(--am)'],['มูลค่า',r.val?(r.val/1e6).toFixed(1)+'M':'—','var(--pu)']].map(([l,v,c])=>`<div style="text-align:center"><div style="font-family:var(--mono);font-size:16px;font-weight:700;color:${c}">${v}</div><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">${l}</div></div>`).join('')}</div></div>`).join('')||'<div style="color:var(--t3);font-size:13px;padding:10px 0">ยังไม่มีข้อมูล</div>';
-  document.getElementById('dtb').innerHTML=RECS.slice(-50).reverse().map(r=>`<tr><td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td><td><span class="tg tb2">${r.zone||'—'}</span></td><td>${r.rep||'—'}</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.hospital||'—'}</td><td>${r.newOppProduct?`<span class="tg tg2">${r.newOppProduct}</span>`:'—'}</td><td>${r.demoProduct?`<span class="tg ta2">${r.demoProduct}</span>`:'—'}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--t3)">ยังไม่มีข้อมูล</td></tr>';}
+  document.getElementById('dtb').innerHTML=RECS.slice(-50).reverse().map(r=>`<tr>
+    <td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td>
+    <td><span class="tg tb2">${r.zone||'—'}</span></td>
+    <td>${r.rep||'—'}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.hospital||'—'}</td>
+    <td>${r.newOppProduct?`<span class="tg tg2">${r.newOppProduct}</span>`:'—'}</td>
+    <td>${r.demoProduct?`<span class="tg ta2">${r.demoProduct}</span>`:'—'}</td>
+    <td style="font-size:12px">${r.mapsUrl
+      ?`<a href="${r.mapsUrl}" target="_blank" style="color:var(--acc2);text-decoration:none;white-space:nowrap">📍 ${(r.locLabel||'').split(',')[0]||'ดูแผนที่'}</a>`
+      :`<span style="color:var(--t3);font-size:11px">${r.locLabel||'—'}</span>`}</td>
+  </tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--t3)">ยังไม่มีข้อมูล</td></tr>';}
 
-function exportCSV(){if(!RECS.length){toast('ไม่มีข้อมูล',true);return;}const h=['ID','วันที่','เขต','ผู้แทน','โรงพยาบาล','แผนก','ผู้ติดต่อ','ตำแหน่ง','เบอร์','รายละเอียด','สินค้า New','ราคา','งบ','ปีงบ','เดือนส่ง','Demo แผนก','Demo สินค้า','ผลลัพธ์'];const rows=RECS.map(r=>[r.id,r.date,r.zone,r.rep,r.hospital,r.dept,r.contactName,r.position,r.phone,r.detail,r.newOppProduct,r.newOppPrice,r.budgetType,r.fiscalYear,r.deliveryMonth,r.demoZone,r.demoProduct,r.demoResult]);const csv=[h,...rows].map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));a.download='EL_Sales_'+new Date().toISOString().slice(0,10)+'.csv';a.click();addA('EXPORT',CU?.u,RECS.length+' records');toast('Export สำเร็จ');}
+function exportCSV(){
+  if(!RECS.length){toast('ไม่มีข้อมูล',true);return;}
+  const h=['ID','วันที่','เขต','ผู้แทน','โรงพยาบาล','แผนก','ผู้ติดต่อ','ตำแหน่ง','เบอร์','รายละเอียด','สินค้า New','ราคา','งบ','ปีงบ','เดือนส่ง','Demo แผนก','Demo สินค้า','ผลลัพธ์','Latitude','Longitude','ตำแหน่ง (ที่อยู่)','Google Maps Link'];
+  const rows=RECS.map(r=>[r.id,r.date,r.zone,r.rep,r.hospital,r.dept,r.contactName,r.position,r.phone,r.detail,r.newOppProduct,r.newOppPrice,r.budgetType,r.fiscalYear,r.deliveryMonth,r.demoZone,r.demoProduct,r.demoResult,r.lat||'',r.lng||'',r.locLabel||'',r.mapsUrl||'']);
+  const csv=[h,...rows].map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download='EL_Sales_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  addA('EXPORT',CU?.u,RECS.length+' records');
+  toast('Export สำเร็จ');
+}
 
 // ADMIN
 function renderAdmin(){
