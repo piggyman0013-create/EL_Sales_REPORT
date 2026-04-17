@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>EL Sales — Earthline</title>
 <meta name="theme-color" id="tcm" content="#080f1e">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23080f1e'/><text x='16' y='23' text-anchor='middle' font-size='15' font-weight='700' font-family='system-ui' fill='%233b82f6'>EL</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><defs><linearGradient id='g1' x1='0' y1='0' x2='0' y2='1'><stop offset='0%25' stop-color='%231d4ed8'/><stop offset='100%25' stop-color='%230369a1'/></linearGradient></defs><rect width='96' height='96' rx='22' fill='%23080f1e'/><path d='M48 14 L72 24 L72 52 C72 66 60 76 48 82 C36 76 24 66 24 52 L24 24 Z' fill='url(%23g1)' opacity='.9'/><path d='M48 20 L68 29 L68 52 C68 63 58 72 48 77 C38 72 28 63 28 52 L28 29 Z' fill='none' stroke='%2393c5fd' stroke-width='1' opacity='.5'/><text x='48' y='57' text-anchor='middle' font-size='22' font-weight='800' font-family='system-ui' fill='white' letter-spacing='-1'>EL</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><defs><linearGradient id='g1' x1='0' y1='0' x2='0' y2='1'><stop offset='0%25' stop-color='%231d4ed8'/><stop offset='100%25' stop-color='%230369a1'/></linearGradient></defs><rect width='96' height='96' rx='22' fill='%23080f1e'/><path d='M48 14 L72 24 L72 52 C72 66 60 76 48 82 C36 76 24 66 24 52 L24 24 Z' fill='url(%23g1)' opacity='.9'/><path d='M48 20 L68 29 L68 52 C68 63 58 72 48 77 C38 72 28 63 28 52 L28 29 Z' fill='none' stroke='%2393c5fd' stroke-width='1' opacity='.5'/><text x='48' y='57' text-anchor='middle' font-size='22' font-weight='800' font-family='system-ui' fill='white' letter-spacing='-1'>EL</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root,[data-theme=dark]{--bg:#080f1e;--s1:#0d1726;--s2:#131f33;--s3:#1a2840;--b1:#1e3050;--b2:#2a4268;--acc:#3b82f6;--acc2:#06b6d4;--gn:#10b981;--am:#f59e0b;--rd:#ef4444;--pu:#8b5cf6;--t1:#dde6f0;--t2:#8fa8c0;--t3:#4a6480;--sh:rgba(0,0,0,.4);--mono:'IBM Plex Mono',monospace}
@@ -345,7 +346,28 @@ tr:hover td{background:var(--s2);color:var(--t1)}
     </details>
   </div>
   <div class="cd">
-    <div class="ch">📋 Audit Log</div>
+    <div class="ch">👥 ผู้ติดต่อโรงพยาบาล (จัดการ)</div>
+    <div class="fb" style="margin-bottom:12px">
+      <select class="fs" id="act-hosp" style="max-width:320px" onchange="renderAdminCts()">
+        <option value="">-- เลือกโรงพยาบาล --</option></select>
+    </div>
+    <div id="act-list"><div style="font-size:13px;color:var(--t3)">เลือกโรงพยาบาลเพื่อดูผู้ติดต่อ</div></div>
+    <div id="act-add" style="display:none;margin-top:12px;padding:14px;background:var(--s2);border-radius:10px">
+      <div class="g2" style="margin-bottom:10px">
+        <div><label class="fl">ชื่อ-สกุล</label><input class="fi" id="act-name" placeholder="ชื่อผู้ติดต่อ"></div>
+        <div><label class="fl">ตำแหน่ง</label>
+          <select class="fs" id="act-pos"><option value="">-- เลือก --</option></select></div>
+        <div><label class="fl">เบอร์ติดต่อ</label><input class="fi" id="act-tel" type="tel" placeholder="0XX-XXX-XXXX"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="bn bp bsm" onclick="saveAdminCt()">บันทึก</button>
+        <button class="bn bs bsm" onclick="document.getElementById('act-add').style.display='none'">ยกเลิก</button>
+      </div>
+    </div>
+    <div style="margin-top:10px" id="act-btns" style="display:none">
+      <button class="bn bs bsm" onclick="document.getElementById('act-add').style.display=''">+ เพิ่มผู้ติดต่อ</button>
+    </div>
+  </div>
     <div class="tw"><table><thead><tr><th>เวลา</th><th>User</th><th>Action</th><th>รายละเอียด</th></tr></thead>
     <tbody id="alg"></tbody></table></div>
   </div>
@@ -462,9 +484,86 @@ function onZ(){const z=document.getElementById('fz').value;sel('frp',(MD?.reps?.
 
 function onH(){const s=document.getElementById('fh');const o=s.options[s.selectedIndex];document.getElementById('fht').value=o.dataset?.type||'';document.getElementById('fbd').value=o.dataset?.beds||'';if(s.value)loadCts(s.value);}
 
-async function loadCts(h){try{const r=await api('getContacts',{hospital:h});if(!r.ok)return;CTS=r.data;const s=document.getElementById('fct');s.innerHTML='<option value="">-- เลือก หรือกรอกใหม่ --</option><option value="__new__">+ เพิ่มผู้ติดต่อใหม่</option>';CTS.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name+(c.position?' ('+c.position+')':'');o.dataset.n=c.name;o.dataset.ps=c.position;o.dataset.ph=c.phone;s.appendChild(o);});}catch(e){}}
+// CONTACTS — localStorage + GAS hybrid
+const CTS_KEY = 'el_contacts';
 
-function onCt(){const s=document.getElementById('fct');const o=s.options[s.selectedIndex];const isN=s.value==='__new__';document.getElementById('gnw').style.display=isN?'':'none';if(!isN&&o.dataset?.n){document.getElementById('fps').value=o.dataset.ps||'';document.getElementById('ftel').value=o.dataset.ph||'';}}
+function getCtsLocal(hosp) {
+  const all = JSON.parse(localStorage.getItem(CTS_KEY) || '{}');
+  return all[hosp] || [];
+}
+
+function saveCtsLocal(hosp, cts) {
+  const all = JSON.parse(localStorage.getItem(CTS_KEY) || '{}');
+  all[hosp] = cts;
+  localStorage.setItem(CTS_KEY, JSON.stringify(all));
+}
+
+function addCtsLocal(hosp, ct) {
+  const cts = getCtsLocal(hosp);
+  // ถ้ามีชื่อซ้ำ — อัปเดตแทน
+  const idx = cts.findIndex(c => c.name === ct.name);
+  if (idx >= 0) cts[idx] = { ...cts[idx], ...ct };
+  else cts.push({ id: 'L' + Date.now(), ...ct });
+  saveCtsLocal(hosp, cts);
+  return cts;
+}
+
+function renderCtsSel(hosp) {
+  const cts = getCtsLocal(hosp);
+  CTS = cts;
+  const s = document.getElementById('fct');
+  s.innerHTML = '<option value="">-- เลือก หรือกรอกใหม่ --</option><option value="__new__">+ เพิ่มผู้ติดต่อใหม่</option>';
+  cts.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.id;
+    o.textContent = c.name + (c.position ? ' — ' + c.position : '') + (c.phone ? ' · ' + c.phone : '');
+    o.dataset.n = c.name; o.dataset.ps = c.position || ''; o.dataset.ph = c.phone || '';
+    s.appendChild(o);
+  });
+}
+
+async function loadCts(h) {
+  // โหลดจาก localStorage ก่อนทันที
+  renderCtsSel(h);
+  // แล้วค่อย sync จาก GAS ถ้าออนไลน์
+  if (!GAS) return;
+  try {
+    const r = await api('getContacts', { hospital: h });
+    if (!r.ok || !r.data?.length) return;
+    // merge: GAS data ชนะถ้ามี id ตรงกัน
+    const local = getCtsLocal(h);
+    const merged = [...r.data];
+    local.forEach(lc => {
+      if (!merged.find(gc => gc.name === lc.name)) merged.push(lc);
+    });
+    saveCtsLocal(h, merged);
+    renderCtsSel(h);
+  } catch(e) {}
+}
+
+function onCt() {
+  const s = document.getElementById('fct');
+  const o = s.options[s.selectedIndex];
+  const isN = s.value === '__new__';
+  document.getElementById('gnw').style.display = isN ? '' : 'none';
+  if (!isN && o.dataset?.n) {
+    document.getElementById('fps').value = o.dataset.ps || '';
+    document.getElementById('ftel').value = o.dataset.ph || '';
+    // ถ้าเลือกคนเดิม แต่เบอร์/ตำแหน่งเปลี่ยน — ให้แก้ได้
+    document.getElementById('fps').removeAttribute('readonly');
+    document.getElementById('ftel').removeAttribute('readonly');
+  }
+}
+
+// บันทึกผู้ติดต่อใหม่ลง localStorage ทันที + ส่ง GAS
+async function saveNewContact(hosp, name, position, phone) {
+  if (!name) return null;
+  const ct = { name, position, phone, hosp };
+  const cts = addCtsLocal(hosp, ct);
+  // sync to GAS async
+  if (GAS) apiP('addContact', { hospital: hosp, name, position, phone }).catch(() => {});
+  return cts;
+}
 
 // DRAFT
 let dtm=null;
@@ -488,7 +587,16 @@ async function submitForm(){
   const btn=document.getElementById('bsub');btn.disabled=true;btn.innerHTML='<span class="sp2"></span> กำลังบันทึก...';
   const cs=document.getElementById('fct');const isN=cs.value==='__new__';
   let cn=isN?document.getElementById('fcn').value:(cs.options[cs.selectedIndex]?.dataset?.n||'');
-  if(isN&&cn)await apiP('addContact',{hospital:document.getElementById('fh').value,name:cn,position:document.getElementById('fps').value,phone:document.getElementById('ftel').value}).catch(()=>{});
+  const hosp2=document.getElementById('fh').value;
+  const pos2=document.getElementById('fps').value;
+  const tel2=document.getElementById('ftel').value;
+  if(isN&&cn){
+    await saveNewContact(hosp2,cn,pos2,tel2);
+  } else if(!isN&&cn){
+    // อัปเดตข้อมูลถ้าแก้ไขตำแหน่ง/เบอร์
+    addCtsLocal(hosp2,{name:cn,position:pos2,phone:tel2});
+    if(GAS) apiP('updateContact',{hospital:hosp2,name:cn,position:pos2,phone:tel2}).catch(()=>{});
+  }
   const data={date:document.getElementById('fd').value,zone:document.getElementById('fz').value,rep:document.getElementById('frp').value,hospital:document.getElementById('fh').value,hospType:document.getElementById('fht').value,beds:document.getElementById('fbd').value,dept:document.getElementById('fdp').value,contactName:cn,position:document.getElementById('fps').value,phone:document.getElementById('ftel').value,detail:document.getElementById('fdt').value,newOppProduct:document.getElementById('fop').value,newOppPrice:document.getElementById('fpr').value,budgetType:document.getElementById('fbg').value,fiscalYear:document.getElementById('ffs').value,deliveryMonth:document.getElementById('fmn').value,deliveryYear:document.getElementById('fyr').value,demoZone:document.getElementById('fdz').value,demoProduct:document.getElementById('fdpd').value,demoResult:document.getElementById('fdr').value,submittedBy:CU?.u};
   try{const r=await apiP('addRecord',data);if(!r.ok)throw new Error(r.error);addA('SUBMIT',CU?.u,data.hospital+'|'+(data.newOppProduct||'-')+'|Demo:'+(data.demoProduct||'-'));sendLN(data);clearDraft();resetForm();toast('บันทึกรายงานสำเร็จ ✓');}
   catch(e){toast('บันทึกไม่สำเร็จ: '+e.message,true);}
@@ -533,7 +641,60 @@ function renderDash(){
 function exportCSV(){if(!RECS.length){toast('ไม่มีข้อมูล',true);return;}const h=['ID','วันที่','เขต','ผู้แทน','โรงพยาบาล','แผนก','ผู้ติดต่อ','ตำแหน่ง','เบอร์','รายละเอียด','สินค้า New','ราคา','งบ','ปีงบ','เดือนส่ง','Demo แผนก','Demo สินค้า','ผลลัพธ์'];const rows=RECS.map(r=>[r.id,r.date,r.zone,r.rep,r.hospital,r.dept,r.contactName,r.position,r.phone,r.detail,r.newOppProduct,r.newOppPrice,r.budgetType,r.fiscalYear,r.deliveryMonth,r.demoZone,r.demoProduct,r.demoResult]);const csv=[h,...rows].map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));a.download='EL_Sales_'+new Date().toISOString().slice(0,10)+'.csv';a.click();addA('EXPORT',CU?.u,RECS.length+' records');toast('Export สำเร็จ');}
 
 // ADMIN
-function renderAdmin(){document.getElementById('gurl').value=GAS;document.getElementById('lnt').value=localStorage.getItem(LNK)||'';renderUsers();renderAudit();}
+function renderAdmin(){
+  document.getElementById('gurl').value=GAS;
+  document.getElementById('lnt').value=localStorage.getItem(LNK)||'';
+  renderUsers();renderAudit();
+  // populate hospital dropdown for contacts
+  if(MD){
+    const all=[...new Set(Object.values(MD.hospitals).flat().map(h=>h.name))].sort();
+    const s=document.getElementById('act-hosp');
+    s.innerHTML='<option value="">-- เลือกโรงพยาบาล --</option>';
+    all.forEach(n=>{const o=document.createElement('option');o.value=o.textContent=n;s.appendChild(o);});
+    if(MD.positions) sel('act-pos',MD.positions,true);
+  }
+}
+
+function renderAdminCts(){
+  const hosp=document.getElementById('act-hosp').value;
+  const listEl=document.getElementById('act-list');
+  const btns=document.getElementById('act-btns');
+  if(!hosp){listEl.innerHTML='<div style="font-size:13px;color:var(--t3)">เลือกโรงพยาบาลเพื่อดูผู้ติดต่อ</div>';btns.style.display='none';return;}
+  btns.style.display='';
+  const cts=getCtsLocal(hosp);
+  if(!cts.length){listEl.innerHTML='<div style="font-size:13px;color:var(--t3);padding:8px 0">ยังไม่มีผู้ติดต่อสำหรับโรงพยาบาลนี้</div>';return;}
+  listEl.innerHTML=cts.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--b1)">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--s3);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--acc);flex-shrink:0">${c.name.charAt(0)}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:500">${c.name}</div>
+        <div style="font-size:12px;color:var(--t3)">${c.position||'—'} · ${c.phone||'ไม่มีเบอร์'}</div>
+      </div>
+      <button class="bn bd bsm" onclick="delAdminCt('${hosp}',${i})">ลบ</button>
+    </div>`).join('');
+}
+
+function saveAdminCt(){
+  const hosp=document.getElementById('act-hosp').value;
+  const name=document.getElementById('act-name').value.trim();
+  const pos=document.getElementById('act-pos').value;
+  const tel=document.getElementById('act-tel').value.trim();
+  if(!hosp||!name){toast('กรุณาเลือกโรงพยาบาลและกรอกชื่อ',true);return;}
+  saveNewContact(hosp,name,pos,tel);
+  document.getElementById('act-name').value='';
+  document.getElementById('act-pos').value='';
+  document.getElementById('act-tel').value='';
+  document.getElementById('act-add').style.display='none';
+  renderAdminCts();
+  toast('บันทึกผู้ติดต่อแล้ว ✓');
+}
+
+function delAdminCt(hosp,idx){
+  if(!confirm('ลบผู้ติดต่อนี้?'))return;
+  const all=JSON.parse(localStorage.getItem(CTS_KEY)||'{}');
+  if(all[hosp]){all[hosp].splice(idx,1);localStorage.setItem(CTS_KEY,JSON.stringify(all));}
+  renderAdminCts();toast('ลบแล้ว');
+}
 
 function renderUsers(){const us=getU();const rb={sales:'tb2',manager:'tg2',admin:'ta2'};const rt={sales:'ผู้แทนขาย',manager:'ผู้จัดการ',admin:'Admin'};document.getElementById('ul').innerHTML=us.map((u,i)=>`<div class="ur"><div class="ua">${u.name.charAt(0)}</div><div style="flex:1"><div style="font-size:14px;font-weight:500">${u.name}</div><div style="font-size:12px;color:var(--t3);font-family:var(--mono)">${u.u} · ${u.zone||'ทุกเขต'}</div></div><span class="tg ${rb[u.role]}">${rt[u.role]}</span>${u.u!==CU.u?`<button class="bn bd bsm" onclick="delUser(${i})">ลบ</button>`:''}</div>`).join('');}
 
