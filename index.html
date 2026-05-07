@@ -600,7 +600,11 @@ function toggleTheme(){
 (()=>{const t=localStorage.getItem('el_th')||'dark';document.documentElement.dataset.theme=t;const b=document.getElementById('tb');if(b)b.textContent=t==='dark'?'🌙':'☀️';})();
 
 // ROLE TABS
-const RT={sales:[{id:'form',l:'กรอกรายงาน'}],manager:[{id:'dash',l:'Dashboard'}],admin:[{id:'form',l:'กรอกรายงาน'},{id:'dash',l:'Dashboard'},{id:'admin',l:'Admin'}]};
+const RT={
+  sales:  [{id:'form', l:'กรอกรายงาน'}],
+  manager:[{id:'form', l:'กรอกรายงาน'},{id:'dash',l:'Dashboard'}],
+  admin:  [{id:'form', l:'กรอกรายงาน'},{id:'dash',l:'Dashboard'},{id:'admin',l:'Admin'}]
+};
 let curP='',curPer='monthly',MD=null,RECS=[],CTS=[];
 
 // INIT
