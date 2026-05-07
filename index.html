@@ -285,7 +285,7 @@ tr:hover td{background:var(--s2);color:var(--t1)}
   <div class="psb" id="dlb"></div>
   <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin-bottom:12px">
     <div class="fb" style="margin:0">
-      <select class="fs" id="dz" style="max-width:150px" onchange="loadDash()"><option value="">ทุกเขต</option></select>
+      <select class="fs" id="dz" style="max-width:150px" onchange="onDashZone()"><option value="">ทุกเขต</option></select>
       <select class="fs" id="dr" style="max-width:160px" onchange="loadDash()"><option value="">ทุกคน</option></select>
       <button class="bn bs bsm" onclick="loadDash()">↻ รีเฟรช</button>
     </div>
@@ -322,7 +322,8 @@ tr:hover td{background:var(--s2);color:var(--t1)}
     <div class="tw"><table><thead><tr><th>วันที่</th><th>เขต</th><th>ผู้แทน</th><th>โรงพยาบาล</th><th>New Opp</th><th>Demo</th><th>📍 ตำแหน่ง</th></tr></thead>
     <tbody id="dtb"></tbody></table></div>
     <div style="margin-top:10px;text-align:right">
-      <button class="bn bs bsm" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="bn bs bsm" onclick="exportCSV()">⬇ Export CSV (หน้านี้)</button>
+      <button class="bn bp bsm" onclick="exportAllData()">⬇ Export ทั้งหมด (Excel)</button>
     </div>
   </div>
 </div>
@@ -645,7 +646,10 @@ function pop(){
   selWithOther('fop',MD.products,true);
   sel('fbg',MD.budgetTypes,true);sel('fmn',MD.months,true);
   sel('fdz',MD.depts,true);selWithOther('fdpd',MD.products,true);
-  sel('dz',MD.zones,true);sel('nz',MD.zones,true);
+  // Dashboard zone dropdown — blank option = "ทุกเขต"
+  const dzEl=document.getElementById('dz');
+  if(dzEl){dzEl.innerHTML='<option value="">ทุกเขต</option>';(MD.zones||[]).forEach(z=>{const o=document.createElement('option');o.value=o.textContent=z;dzEl.appendChild(o);});}
+  sel('nz',MD.zones,true);
   document.getElementById('fd').value=new Date().toISOString().split('T')[0];
   document.getElementById('ffs').value=new Date().getFullYear()+543;
   document.getElementById('fyr').value=new Date().getFullYear();
@@ -687,36 +691,61 @@ function getProductVal(selId){
 
 function onZ(){
   const z=document.getElementById('fz').value;
-  sel('frp',(MD?.reps?.[z]||[]),true);
-  sel('dr',(MD?.reps?.[z]||[]),true);
-  const mainList=MD?.hospitals?.[z]||[];
-  const allList=MD?.allHospitals?.[z]||[];
 
-  // ดึง รพ.ที่เพิ่มเองใน localStorage
-  const localHosps = JSON.parse(localStorage.getItem('el_custom_hosps')||'{}')[z]||[];
+  // อัปเดต rep dropdown ตามเขต
+  sel('frp',(MD?.reps?.[z]||[]),true);
+
+  // ดึง รพ.โฟกัส (จาก hospitals) และ รพ.ทั้งหมด (จาก allHospitals)
+  // ทั้งสองมี type/beds จาก GAS แล้ว
+  const mainList  = (MD?.hospitals?.[z]    || []);
+  const allList   = (MD?.allHospitals?.[z] || []);
+  const localHosps= JSON.parse(localStorage.getItem('el_custom_hosps')||'{}')[z]||[];
 
   const s=document.getElementById('fh');
   s.innerHTML='<option value="">-- เลือกโรงพยาบาล --</option>';
 
   if(mainList.length){
     const g=document.createElement('optgroup');g.label='⭐ โรงพยาบาลโฟกัส';
-    mainList.forEach(h=>{const o=document.createElement('option');o.value=h.name;o.textContent=h.name;o.dataset.beds=h.beds||'';o.dataset.type=h.type||'';o.dataset.main='1';g.appendChild(o);});
+    mainList.forEach(h=>{
+      const o=document.createElement('option');
+      o.value=h.name; o.textContent=h.name;
+      // หา type/beds จาก allHospitals ด้วยถ้า mainList ไม่มี
+      const found = allList.find(a=>a.name===h.name);
+      o.dataset.beds = h.beds||found?.beds||'';
+      o.dataset.type = h.type||found?.type||'';
+      o.dataset.main='1';
+      g.appendChild(o);
+    });
     s.appendChild(g);
   }
+
   const mainNames=new Set(mainList.map(h=>h.name));
   const others=allList.filter(h=>!mainNames.has(h.name));
   if(others.length){
     const g=document.createElement('optgroup');g.label='โรงพยาบาลอื่นๆ ในเขต';
-    others.forEach(h=>{const o=document.createElement('option');o.value=h.name;o.textContent=h.name;o.dataset.beds=h.beds||'';o.dataset.type=h.type||'';o.dataset.main='0';g.appendChild(o);});
+    others.forEach(h=>{
+      const o=document.createElement('option');
+      o.value=h.name; o.textContent=h.name;
+      o.dataset.beds=h.beds||''; o.dataset.type=h.type||''; o.dataset.main='0';
+      g.appendChild(o);
+    });
     s.appendChild(g);
   }
+
   if(localHosps.length){
     const g=document.createElement('optgroup');g.label='➕ โรงพยาบาลที่เพิ่มเอง';
-    localHosps.forEach(h=>{const o=document.createElement('option');o.value=h.name;o.textContent=h.name;o.dataset.beds=h.beds||'';o.dataset.type=h.type||'';o.dataset.main='0';g.appendChild(o);});
+    localHosps.forEach(h=>{
+      const o=document.createElement('option');
+      o.value=h.name; o.textContent=h.name;
+      o.dataset.beds=h.beds||''; o.dataset.type=h.type||''; o.dataset.main='0';
+      g.appendChild(o);
+    });
     s.appendChild(g);
   }
-  // ตัวเลือกเพิ่ม รพ.ใหม่
-  const oNew=document.createElement('option');oNew.value='__newhosp__';oNew.textContent='➕ เพิ่มโรงพยาบาลใหม่';s.appendChild(oNew);
+
+  const oNew=document.createElement('option');
+  oNew.value='__newhosp__'; oNew.textContent='➕ เพิ่มโรงพยาบาลใหม่';
+  s.appendChild(oNew);
 }
 
 function onH(){
@@ -1107,6 +1136,16 @@ function saveLn(){const t=document.getElementById('lnt').value.trim();if(!t)retu
 async function testLn(){const tok=localStorage.getItem(LNK);if(!tok){toast('บันทึก Token ก่อน',true);return;}const r=document.getElementById('lnr');r.textContent='⏳ กำลังส่ง...';try{await fetch('https://notify-api.line.me/api/notify',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/x-www-form-urlencoded'},body:'message='+encodeURIComponent('\n✅ ทดสอบ Earthline Sales Notify สำเร็จ!')});r.textContent='✅ ส่งสำเร็จ';r.style.color='var(--gn)';}catch(e){r.textContent='❌ '+e.message;r.style.color='var(--rd)';}}
 
 // DASHBOARD
+function onDashZone(){
+  const z = document.getElementById('dz').value;
+  // อัปเดต rep dropdown ตามเขตที่เลือก
+  const repSel = document.getElementById('dr');
+  const reps = z ? (MD?.reps?.[z]||[]) : [];
+  repSel.innerHTML = '<option value="">ทุกคน</option>';
+  reps.forEach(r=>{const o=document.createElement('option');o.value=o.textContent=r;repSel.appendChild(o);});
+  loadDash();
+}
+
 async function loadDash(){const now=new Date();const dl=document.getElementById('dlb');if(dl)dl.textContent=now.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});try{const z=document.getElementById('dz')?.value||'';const rep=document.getElementById('dr')?.value||'';const r=await api('getRecords',{zone:z,rep});if(r.ok){RECS=r.data;renderDash();}}catch(e){toast('โหลด Dashboard ไม่สำเร็จ',true);}}
 
 function setPer(p,btn){curPer=p;document.querySelectorAll('.pt').forEach(t=>t.classList.remove('on'));btn.classList.add('on');renderDash();}
@@ -1168,6 +1207,41 @@ function exportCSV(){
   a.click();
   addA('EXPORT',CU?.u,RECS.length+' records');
   toast('Export สำเร็จ');
+}
+
+async function exportAllData(){
+  toast('กำลังดึงข้อมูลทั้งหมด...');
+  const btn = event.target;
+  btn.disabled=true; btn.innerHTML='<span class="sp2"></span> กำลังโหลด...';
+  try{
+    // ดึงทุก record ไม่ filter
+    const r = await api('getRecords',{});
+    if(!r.ok) throw new Error(r.error);
+    const all = r.data;
+    if(!all.length){toast('ไม่มีข้อมูล',true);return;}
+
+    const h=['ID','Timestamp','วันที่','เขต','ผู้แทน','โรงพยาบาล','ประเภท รพ.','จำนวนเตียง',
+      'แผนก','ผู้ติดต่อ','ตำแหน่ง','เบอร์โทร','รายละเอียดการทำงาน',
+      'สินค้า New Opp','ราคา (บาท)','ประเภทงบ','ปีงบประมาณ','เดือนส่ง','ปีส่ง',
+      'Demo แผนก','Demo สินค้า','ผลลัพธ์ Demo',
+      'Latitude','Longitude','ตำแหน่ง GPS','Google Maps Link'];
+    const rows = all.map(r=>[
+      r.id, r.timestamp, r.date, r.zone, r.rep, r.hospital, r.hospType, r.beds,
+      r.dept, r.contactName, r.position, r.phone, r.detail,
+      r.newOppProduct, r.newOppPrice, r.budgetType, r.fiscalYear, r.deliveryMonth, r.deliveryYear,
+      r.demoZone, r.demoProduct, r.demoResult,
+      r.lat||'', r.lng||'', r.locLabel||'', r.mapsUrl||''
+    ]);
+
+    const csv=[h,...rows].map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+    a.download='EL_Sales_ทั้งหมด_'+new Date().toISOString().slice(0,10)+'.csv';
+    a.click();
+    addA('EXPORT_ALL',CU?.u,all.length+' records');
+    toast(`Export สำเร็จ ${all.length} รายการ ✓`);
+  }catch(e){toast('Export ไม่สำเร็จ: '+e.message,true);}
+  finally{btn.disabled=false;btn.innerHTML='⬇ Export ทั้งหมด (Excel)';}
 }
 
 // ADMIN
