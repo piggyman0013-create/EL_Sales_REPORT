@@ -410,7 +410,7 @@ tr:hover td{background:var(--s2);color:var(--t1)}
 
 <script>
 // CONFIG
-let GAS=localStorage.getItem('el_gas')||'https://script.google.com/macros/s/AKfycbwDb3zX83qsU_yuEffNOBdPzPuXAK_f7NI_rPKZ0G-p2KQmqv6zmLXzX8Efp5qcima_sA/exec';
+let GAS=localStorage.getItem('el_gas')||'https://script.google.com/macros/s/AKfycbxme6gzKmdtdxtFhk1BxMJBv1Z0qvhARgKyLokEkWzIZZS-mi_ufKA5ifXYwx47EZ82Hw/exec';
 const LNK='el_ln',UK='el_users',SK='el_sess',DK='el_draft',AK='el_audit';
 
 // USERS
@@ -516,20 +516,12 @@ function doLogin(){
   if(!u||!p){err.textContent='กรุณากรอก Username และ Password';err.classList.add('on');return;}
   btn.disabled=true;btn.innerHTML='<span class="sp2"></span> กำลังตรวจสอบ...';
 
-  // ลอง GAS ก่อน ถ้าไม่มี GAS ใช้ local fallback
-  const doLocalLogin = () => {
-    const users=getLocalUsers();
-    const user=users.find(x=>x.u===u&&x.p===p);
-    if(!user){
-      err.textContent='ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
-      err.classList.add('on');
-      btn.disabled=false;btn.textContent='เข้าสู่ระบบ';
-      addA('LOGIN_FAIL',u,'Local: Failed');
-      return;
-    }
-    onLoginSuccess(user);
+  const showErr=(msg)=>{
+    err.textContent=msg;err.classList.add('on');
+    btn.disabled=false;btn.textContent='เข้าสู่ระบบ';
   };
 
+  // ถ้ามี GAS URL — ดึงจาก Sheet เสมอ
   if(GAS){
     fetch(GAS+'?action=login&u='+encodeURIComponent(u)+'&p='+encodeURIComponent(p))
       .then(r=>r.json())
@@ -537,19 +529,34 @@ function doLogin(){
         if(r.ok){
           onLoginSuccess(r.user);
         } else {
-          // ลอง local fallback
-          const users=getLocalUsers();
-          const user=users.find(x=>x.u===u&&x.p===p);
-          if(user){ onLoginSuccess(user); return; }
-          err.textContent=r.error||'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
-          err.classList.add('on');
-          btn.disabled=false;btn.textContent='เข้าสู่ระบบ';
-          addA('LOGIN_FAIL',u,'Failed');
+          // GAS ตอบว่าผิด — ไม่ fallback local
+          addA('LOGIN_FAIL',u,'GAS: '+r.error);
+          showErr(r.error||'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
         }
       })
-      .catch(()=>{ doLocalLogin(); });
+      .catch(e=>{
+        // network error เท่านั้น — ค่อย fallback local
+        console.warn('GAS login failed, trying local:', e);
+        const users=getLocalUsers();
+        const user=users.find(x=>x.u===u&&x.p===p);
+        if(user){
+          onLoginSuccess(user);
+        } else {
+          addA('LOGIN_FAIL',u,'Network error + local not found');
+          showErr('ไม่สามารถเชื่อมต่อได้ และไม่พบบัญชีนี้ในระบบ offline');
+        }
+      });
   } else {
-    setTimeout(doLocalLogin, 400);
+    // ไม่มี GAS URL เลย — fallback local พร้อมแจ้งเตือน
+    err.textContent='';err.classList.remove('on');
+    const users=getLocalUsers();
+    const user=users.find(x=>x.u===u&&x.p===p);
+    if(user){
+      onLoginSuccess(user);
+    } else {
+      addA('LOGIN_FAIL',u,'No GAS + local not found');
+      showErr('ไม่พบบัญชีนี้ (ระบบทำงาน offline)');
+    }
   }
 }
 
