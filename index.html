@@ -194,20 +194,16 @@ tr:hover td{background:var(--s2);color:var(--t1)}
         <span class="fe" id="eh">กรุณาเลือกโรงพยาบาล</span></div>
       <!-- เพิ่ม รพ.ใหม่ -->
       <div id="gnewhosp" class="gf" style="display:none">
-        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-          <div><label class="fl">ชื่อโรงพยาบาลใหม่<span class="r">*</span></label>
-            <input class="fi" id="fhnew" placeholder="ชื่อโรงพยาบาล" onchange="sd()"></div>
-          <div><label class="fl">ประเภท</label>
-            <input class="fi" id="fhtnew" placeholder="เช่น รพศ., รพท." onchange="sd()"></div>
-          <div><label class="fl">จำนวนเตียง</label>
-            <input class="fi" id="fbdnew" type="number" placeholder="0" onchange="sd()"></div>
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px">
+          <label class="fl">ชื่อโรงพยาบาลใหม่<span class="r">*</span></label>
+          <input class="fi" id="fhnew" placeholder="ชื่อโรงพยาบาล" onchange="sd()">
         </div>
       </div>
-      <div><label class="fl">ประเภท</label><input class="fi" id="fht" readonly placeholder="กรอกอัตโนมัติ"></div>
-      <div><label class="fl">จำนวนเตียง</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input class="fi" id="fbd" type="number" onchange="sd()" style="flex:1">
-          <span style="font-size:13px;color:var(--t2)">เตียง</span></div></div>
+      <!-- hidden fields สำหรับ submit (ไม่แสดงแต่ยังส่งค่าได้) -->
+      <input type="hidden" id="fht">
+      <input type="hidden" id="fbd">
+      <input type="hidden" id="fhtnew">
+      <input type="hidden" id="fbdnew">
     </div>
   </div>
 
@@ -222,8 +218,16 @@ tr:hover td{background:var(--s2);color:var(--t1)}
         <select class="fs" id="fct" onchange="onCt();sd()">
           <option value="">-- เลือก หรือกรอกใหม่ --</option>
           <option value="__new__">+ เพิ่มผู้ติดต่อใหม่</option></select></div>
-      <div id="gnw" style="display:none"><label class="fl">ชื่อใหม่</label>
-        <input class="fi" id="fcn" placeholder="ชื่อ-สกุล" onchange="sd()"></div>
+
+      <!-- ชื่อผู้ติดต่อ — แสดงเสมอ แก้ไขได้ -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+          <label class="fl" style="margin:0">ชื่อ-สกุล</label>
+          <span id="ct-edit-hint" style="font-size:11px;color:var(--t3)"></span>
+        </div>
+        <input class="fi" id="fcn" placeholder="ชื่อ-สกุล ผู้ติดต่อ" onchange="sd()">
+      </div>
+
       <div><label class="fl">ตำแหน่ง</label>
         <select class="fs" id="fps" onchange="sd()"><option value="">-- เลือก --</option></select></div>
       <div>
@@ -844,47 +848,89 @@ async function loadCts(h) {
 }
 
 function onCt() {
-  const s = document.getElementById('fct');
-  const o = s.options[s.selectedIndex];
+  const s   = document.getElementById('fct');
+  const o   = s.options[s.selectedIndex];
   const isN = s.value === '__new__';
-  document.getElementById('gnw').style.display = isN ? '' : 'none';
-  const editBtn = document.getElementById('btn-edit-ct');
-  if (!isN && s.value && o.dataset?.n) {
-    document.getElementById('fps').value = o.dataset.ps || '';
-    document.getElementById('ftel').value = o.dataset.ph || '';
-    // lock field ก่อน รอกด edit
-    document.getElementById('fps').setAttribute('readonly','');
-    document.getElementById('ftel').setAttribute('readonly','');
-    if(editBtn) editBtn.style.display='';
-  } else {
-    document.getElementById('fps').removeAttribute('readonly');
-    document.getElementById('ftel').removeAttribute('readonly');
+  const nameEl = document.getElementById('fcn');
+  const posEl  = document.getElementById('fps');
+  const telEl  = document.getElementById('ftel');
+  const editBtn= document.getElementById('btn-edit-ct');
+  const hint   = document.getElementById('ct-edit-hint');
+
+  if (isN) {
+    // เพิ่มใหม่ — กรอกเองได้ทั้งหมด
+    nameEl.value=''; nameEl.removeAttribute('readonly'); nameEl.placeholder='พิมพ์ชื่อ-สกุล ผู้ติดต่อใหม่';
+    posEl.value='';  posEl.removeAttribute('readonly');
+    telEl.value='';  telEl.removeAttribute('readonly');
     if(editBtn) editBtn.style.display='none';
+    if(hint) hint.textContent='';
+    nameEl.focus();
+  } else if (s.value && o.dataset?.n) {
+    // เลือกคนเดิม — แสดงข้อมูล lock ไว้ก่อน
+    nameEl.value = o.dataset.n || '';
+    posEl.value  = o.dataset.ps || '';
+    telEl.value  = o.dataset.ph || '';
+    nameEl.setAttribute('readonly','');
+    posEl.setAttribute('readonly','');
+    telEl.setAttribute('readonly','');
+    if(editBtn){ editBtn.style.display=''; editBtn.textContent='✏️ แก้ไข'; editBtn.style.background=''; editBtn.style.color=''; }
+    if(hint) hint.textContent='กด ✏️ เพื่อแก้ไข';
+  } else {
+    // ล้าง
+    nameEl.value=''; nameEl.removeAttribute('readonly'); nameEl.placeholder='ชื่อ-สกุล ผู้ติดต่อ';
+    posEl.value='';  posEl.removeAttribute('readonly');
+    telEl.value='';  telEl.removeAttribute('readonly');
+    if(editBtn) editBtn.style.display='none';
+    if(hint) hint.textContent='';
   }
 }
 
 function toggleEditCt(){
-  const pos = document.getElementById('fps');
-  const tel = document.getElementById('ftel');
-  const btn = document.getElementById('btn-edit-ct');
-  const isLocked = pos.hasAttribute('readonly');
+  const nameEl = document.getElementById('fcn');
+  const posEl  = document.getElementById('fps');
+  const telEl  = document.getElementById('ftel');
+  const btn    = document.getElementById('btn-edit-ct');
+  const hint   = document.getElementById('ct-edit-hint');
+  const isLocked = nameEl.hasAttribute('readonly');
+
   if(isLocked){
-    pos.removeAttribute('readonly'); tel.removeAttribute('readonly');
-    btn.textContent='💾 บันทึกแก้ไข'; btn.style.background='var(--gn)'; btn.style.color='#fff';
-    pos.focus();
+    // unlock — แก้ไขได้
+    nameEl.removeAttribute('readonly');
+    posEl.removeAttribute('readonly');
+    telEl.removeAttribute('readonly');
+    btn.textContent='💾 บันทึก'; btn.style.background='var(--gn)'; btn.style.color='#fff';
+    if(hint) hint.textContent='แก้ไขแล้วกด 💾';
+    nameEl.focus();
   } else {
     // บันทึก
-    const s=document.getElementById('fct');
-    const o=s.options[s.selectedIndex];
-    const hosp=document.getElementById('fh').value;
-    if(o.dataset?.n && hosp){
-      addCtsLocal(hosp,{name:o.dataset.n, position:pos.value, phone:tel.value});
-      if(GAS) apiP('updateContact',{hospital:hosp,name:o.dataset.n,position:pos.value,phone:tel.value}).catch(()=>{});
-      o.dataset.ps=pos.value; o.dataset.ph=tel.value;
-      toast('บันทึกข้อมูลผู้ติดต่อแล้ว ✓');
+    const s   = document.getElementById('fct');
+    const o   = s.options[s.selectedIndex];
+    const hosp= getHospVal();
+    const oldName = o.dataset?.n || '';
+    const newName = nameEl.value.trim();
+    const newPos  = posEl.value;
+    const newTel  = telEl.value;
+
+    if(hosp && newName){
+      // อัปเดต localStorage — ลบชื่อเก่า เพิ่มชื่อใหม่
+      if(oldName && oldName !== newName){
+        const cts = getCtsLocal(hosp).filter(c=>c.name!==oldName);
+        saveCtsLocal(hosp, cts);
+      }
+      addCtsLocal(hosp,{name:newName, position:newPos, phone:newTel});
+      // sync GAS
+      if(GAS) apiP('updateContact',{hospital:hosp, oldName, name:newName, position:newPos, phone:newTel}).catch(()=>{});
+      // อัปเดต option
+      o.dataset.n=newName; o.dataset.ps=newPos; o.dataset.ph=newTel;
+      o.textContent=newName+(newPos?' — '+newPos:'')+(newTel?' · '+newTel:'');
+      toast('บันทึกผู้ติดต่อแล้ว ✓');
     }
-    pos.setAttribute('readonly',''); tel.setAttribute('readonly','');
+
+    nameEl.setAttribute('readonly','');
+    posEl.setAttribute('readonly','');
+    telEl.setAttribute('readonly','');
     btn.textContent='✏️ แก้ไข'; btn.style.background=''; btn.style.color='';
+    if(hint) hint.textContent='กด ✏️ เพื่อแก้ไข';
   }
 }
 
@@ -1013,7 +1059,9 @@ async function submitForm(){
 
   btn.innerHTML='<span class="sp2"></span> กำลังบันทึก...';
   const cs=document.getElementById('fct');const isN=cs.value==='__new__';
-  let cn=isN?document.getElementById('fcn').value:(cs.options[cs.selectedIndex]?.dataset?.n||'');
+  // ชื่อผู้ติดต่อ — อ่านจาก input fcn เสมอ (ทั้งใหม่และแก้ไข)
+  let cn = document.getElementById('fcn').value.trim();
+  if(!cn && !isN) cn = cs.options[cs.selectedIndex]?.dataset?.n||'';
   const hosp2 = getHospVal();
   // ถ้าเป็น รพ.ใหม่ — บันทึกลง localStorage
   const fhSel = document.getElementById('fh');
@@ -1071,11 +1119,16 @@ async function submitForm(){
 
 function resetForm(){
   ['fz','frp','fh','fdp','fct','fps','fop','fbg','fmn','fdz','fdpd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['fht','fbd','ftel','fdt','fpr','fdr','fcn','fhnew','fhtnew','fbdnew'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fht','fbd','ftel','fdt','fpr','fdr','fcn','fhnew'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('fd').value=new Date().toISOString().split('T')[0];
-  document.getElementById('gnw').style.display='none';
+  // รีเซ็ต contact fields
+  const fcnEl=document.getElementById('fcn');
+  if(fcnEl){fcnEl.removeAttribute('readonly');fcnEl.placeholder='ชื่อ-สกุล ผู้ติดต่อ';}
+  const fpsEl=document.getElementById('fps');if(fpsEl)fpsEl.removeAttribute('readonly');
+  const ftelEl=document.getElementById('ftel');if(ftelEl)ftelEl.removeAttribute('readonly');
+  const editBtn=document.getElementById('btn-edit-ct');if(editBtn){editBtn.style.display='none';editBtn.textContent='✏️ แก้ไข';editBtn.style.background='';editBtn.style.color='';}
+  const hint=document.getElementById('ct-edit-hint');if(hint)hint.textContent='';
   document.getElementById('gnewhosp').style.display='none';
-  const editBtn=document.getElementById('btn-edit-ct');if(editBtn)editBtn.style.display='none';
   document.querySelectorAll('.fe').forEach(e=>e.classList.remove('on'));
   document.querySelectorAll('.er').forEach(e=>e.classList.remove('er'));
   _gpsCache=null;
