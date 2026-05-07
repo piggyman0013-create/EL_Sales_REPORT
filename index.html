@@ -192,6 +192,17 @@ tr:hover td{background:var(--s2);color:var(--t1)}
       <div class="gf"><label class="fl">ชื่อโรงพยาบาล<span class="r">*</span></label>
         <select class="fs" id="fh" onchange="onH();sd()"><option value="">-- เลือกโรงพยาบาล --</option></select>
         <span class="fe" id="eh">กรุณาเลือกโรงพยาบาล</span></div>
+      <!-- เพิ่ม รพ.ใหม่ -->
+      <div id="gnewhosp" class="gf" style="display:none">
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div><label class="fl">ชื่อโรงพยาบาลใหม่<span class="r">*</span></label>
+            <input class="fi" id="fhnew" placeholder="ชื่อโรงพยาบาล" onchange="sd()"></div>
+          <div><label class="fl">ประเภท</label>
+            <input class="fi" id="fhtnew" placeholder="เช่น รพศ., รพท." onchange="sd()"></div>
+          <div><label class="fl">จำนวนเตียง</label>
+            <input class="fi" id="fbdnew" type="number" placeholder="0" onchange="sd()"></div>
+        </div>
+      </div>
       <div><label class="fl">ประเภท</label><input class="fi" id="fht" readonly placeholder="กรอกอัตโนมัติ"></div>
       <div><label class="fl">จำนวนเตียง</label>
         <div style="display:flex;gap:8px;align-items:center">
@@ -215,8 +226,13 @@ tr:hover td{background:var(--s2);color:var(--t1)}
         <input class="fi" id="fcn" placeholder="ชื่อ-สกุล" onchange="sd()"></div>
       <div><label class="fl">ตำแหน่ง</label>
         <select class="fs" id="fps" onchange="sd()"><option value="">-- เลือก --</option></select></div>
-      <div><label class="fl">เบอร์ติดต่อ</label>
-        <input class="fi" id="ftel" type="tel" placeholder="0XX-XXX-XXXX" onchange="sd()"></div>
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+          <label class="fl" style="margin:0">เบอร์ติดต่อ</label>
+          <button class="bn bs bsm" id="btn-edit-ct" onclick="toggleEditCt()" style="display:none;padding:3px 10px;font-size:11px">✏️ แก้ไข</button>
+        </div>
+        <input class="fi" id="ftel" type="tel" placeholder="0XX-XXX-XXXX" onchange="sd()">
+      </div>
     </div>
     <div class="fsc">รายละเอียดการทำงาน</div>
     <textarea class="ft gf" id="fdt" placeholder="บรรยายรายละเอียด..." onchange="sd()" style="width:100%"></textarea>
@@ -393,39 +409,169 @@ let GAS=localStorage.getItem('el_gas')||'https://script.google.com/macros/s/AKfy
 const LNK='el_ln',UK='el_users',SK='el_sess',DK='el_draft',AK='el_audit';
 
 // USERS
-function getU(){const s=localStorage.getItem(UK);if(s)return JSON.parse(s);
-  const d=[{u:'admin',p:'Admin@EL2025',role:'admin',name:'Administrator',zone:''},
-    {u:'arkom',p:'Arkom@EL2025',role:'manager',name:'คุณอาคม (MD)',zone:''},
-    {u:'mink',p:'Mink@EL2025',role:'admin',name:'พัสวี Mink',zone:''},
-    {u:'duangkae',p:'Sales@BA2025',role:'sales',name:'ดวงแข สังโขบล',zone:'BA'},
-    {u:'ornnalin',p:'Sales@BD2025',role:'sales',name:'อรนลิน สิริแสงจันทร์',zone:'BD'},
-    {u:'thanach',p:'Sales@UB2025',role:'sales',name:'ธนัช พุ่มวงษ์',zone:'UB'}];
-  localStorage.setItem(UK,JSON.stringify(d));return d;}
-function saveU(u){localStorage.setItem(UK,JSON.stringify(u));}
+// ─── USER MANAGEMENT (GAS primary, localStorage fallback) ──
+
+// โหลด users จาก GAS แล้ว cache ไว้ใน memory
+let _usersCache = null;
+
+async function loadUsersFromGAS() {
+  if (!GAS) return getLocalUsers();
+  try {
+    const r = await api('getUsers');
+    if (r.ok && r.data?.length) {
+      _usersCache = r.data;
+      return r.data;
+    }
+  } catch(e) {}
+  return getLocalUsers();
+}
+
+async function renderUsers() {
+  document.getElementById('ul').innerHTML =
+    '<div style="color:var(--t3);font-size:13px;padding:8px">กำลังโหลด...</div>';
+  const users = await loadUsersFromGAS();
+  _usersCache = users;
+  const rb={sales:'tb2',manager:'tg2',admin:'ta2'};
+  const rt={sales:'ผู้แทนขาย',manager:'ผู้จัดการ',admin:'Admin'};
+  document.getElementById('ul').innerHTML = users.map((u,i) => `
+    <div class="ur">
+      <div class="ua">${(u.name||u.u).charAt(0)}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:500">${u.name||u.u}</div>
+        <div style="font-size:12px;color:var(--t3);font-family:var(--mono)">${u.u} · ${u.zone||'ทุกเขต'}</div>
+      </div>
+      <span class="tg ${rb[u.role]||'tb2'}">${rt[u.role]||u.role}</span>
+      ${u.u !== CU.u
+        ? `<button class="bn bd bsm" onclick="delUser('${u.u}')">ลบ</button>`
+        : '<span style="font-size:11px;color:var(--t3)">(คุณ)</span>'}
+    </div>`).join('') ||
+    '<div style="color:var(--t3);font-size:13px;padding:8px">ยังไม่มี User</div>';
+}
+
+async function addUser() {
+  const u  = document.getElementById('nu').value.trim().toLowerCase();
+  const n  = document.getElementById('nn').value.trim();
+  const p  = document.getElementById('np').value;
+  const role = document.getElementById('nrl').value;
+  const z  = document.getElementById('nz').value;
+  if (!u||!n||!p) { toast('กรอกข้อมูลให้ครบ', true); return; }
+  if (p.length < 6) { toast('รหัสผ่านอย่างน้อย 6 ตัว', true); return; }
+
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  try {
+    if (GAS) {
+      const r = await apiP('addUser', { u, p, role, name: n, zone: z });
+      if (!r.ok) { toast(r.error||'เพิ่มไม่สำเร็จ', true); return; }
+    } else {
+      // fallback localStorage
+      const users = getLocalUsers();
+      if (users.find(x => x.u === u)) { toast('Username นี้มีแล้ว', true); return; }
+      users.push({ u, p, role, name: n, zone: z });
+      localStorage.setItem(UK, JSON.stringify(users));
+    }
+    addA('ADD_USER', CU.u, `Added: ${u} (${role})`);
+    // clear form
+    ['nu','nn','np'].forEach(id => document.getElementById(id).value = '');
+    toast('เพิ่ม User สำเร็จ ✓');
+    renderUsers();
+  } catch(e) { toast('เกิดข้อผิดพลาด: '+e.message, true); }
+  finally { btn.disabled = false; btn.textContent = 'เพิ่ม User'; }
+}
+
+async function delUser(username) {
+  if (!confirm(`ลบ User "${username}" ออกจากระบบ?`)) return;
+  try {
+    if (GAS) {
+      const r = await apiP('deleteUser', { u: username });
+      if (!r.ok) { toast(r.error||'ลบไม่สำเร็จ', true); return; }
+    } else {
+      const users = getLocalUsers().filter(x => x.u !== username);
+      localStorage.setItem(UK, JSON.stringify(users));
+    }
+    addA('DEL_USER', CU.u, `Deleted: ${username}`);
+    toast('ลบ User แล้ว');
+    renderUsers();
+  } catch(e) { toast('เกิดข้อผิดพลาด: '+e.message, true); }
+}
 
 // SESSION
 let CU=null;
 function chkS(){const s=localStorage.getItem(SK);if(!s)return false;const o=JSON.parse(s);if(new Date()>new Date(o.exp)){localStorage.removeItem(SK);return false;}CU=o.u;return true;}
 function setS(u){const e=new Date();e.setHours(e.getHours()+8);localStorage.setItem(SK,JSON.stringify({u,exp:e}));CU=u;}
 function clrS(){localStorage.removeItem(SK);CU=null;}
+function logout(){if(!confirm('ออกจากระบบ?'))return;addA('LOGOUT',CU?.u,'Out');clrS();location.reload();}
 
-// LOGIN
+// ═══ LOGIN — ใช้ GAS เป็นแหล่งข้อมูล User ════════════════
 function doLogin(){
   const u=document.getElementById('lu').value.trim().toLowerCase();
   const p=document.getElementById('lp').value;
-  const err=document.getElementById('le');const btn=document.getElementById('lbtn');
+  const err=document.getElementById('le');
+  const btn=document.getElementById('lbtn');
   if(!u||!p){err.textContent='กรุณากรอก Username และ Password';err.classList.add('on');return;}
   btn.disabled=true;btn.innerHTML='<span class="sp2"></span> กำลังตรวจสอบ...';
-  setTimeout(()=>{
-    const user=getU().find(x=>x.u===u&&x.p===p);
-    if(!user){err.textContent='ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';err.classList.add('on');btn.disabled=false;btn.textContent='เข้าสู่ระบบ';addA('LOGIN_FAIL',u,'Failed');return;}
-    setS(user);addA('LOGIN',u,'Role:'+user.role);err.classList.remove('on');
-    document.getElementById('lw').classList.add('out');
-    setTimeout(()=>document.getElementById('lw').style.display='none',320);
-    initApp();
-  },500);}
 
-function logout(){if(!confirm('ออกจากระบบ?'))return;addA('LOGOUT',CU?.u,'Out');clrS();location.reload();}
+  // ลอง GAS ก่อน ถ้าไม่มี GAS ใช้ local fallback
+  const doLocalLogin = () => {
+    const users=getLocalUsers();
+    const user=users.find(x=>x.u===u&&x.p===p);
+    if(!user){
+      err.textContent='ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+      err.classList.add('on');
+      btn.disabled=false;btn.textContent='เข้าสู่ระบบ';
+      addA('LOGIN_FAIL',u,'Local: Failed');
+      return;
+    }
+    onLoginSuccess(user);
+  };
+
+  if(GAS){
+    fetch(GAS+'?action=login&u='+encodeURIComponent(u)+'&p='+encodeURIComponent(p))
+      .then(r=>r.json())
+      .then(r=>{
+        if(r.ok){
+          onLoginSuccess(r.user);
+        } else {
+          // ลอง local fallback
+          const users=getLocalUsers();
+          const user=users.find(x=>x.u===u&&x.p===p);
+          if(user){ onLoginSuccess(user); return; }
+          err.textContent=r.error||'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+          err.classList.add('on');
+          btn.disabled=false;btn.textContent='เข้าสู่ระบบ';
+          addA('LOGIN_FAIL',u,'Failed');
+        }
+      })
+      .catch(()=>{ doLocalLogin(); });
+  } else {
+    setTimeout(doLocalLogin, 400);
+  }
+}
+
+function onLoginSuccess(user){
+  setS(user);
+  addA('LOGIN',user.u,'Role:'+user.role);
+  document.getElementById('le').classList.remove('on');
+  document.getElementById('lw').classList.add('out');
+  setTimeout(()=>document.getElementById('lw').style.display='none',320);
+  initApp();
+}
+
+// Local fallback users (ใช้เมื่อ GAS ไม่พร้อม)
+function getLocalUsers(){
+  const s=localStorage.getItem(UK);
+  if(s) return JSON.parse(s);
+  const d=[
+    {u:'admin',   p:'Admin@EL2025', role:'admin',   name:'Administrator',       zone:''},
+    {u:'arkom',   p:'Arkom@EL2025', role:'manager', name:'คุณอาคม (MD)',          zone:''},
+    {u:'mink',    p:'Mink@EL2025',  role:'admin',   name:'พัสวี Mink',            zone:''},
+    {u:'duangkae',p:'Sales@BA2025', role:'sales',   name:'ดวงแข สังโขบล',        zone:'BA'},
+    {u:'ornnalin',p:'Sales@BD2025', role:'sales',   name:'อรนลิน สิริแสงจันทร์', zone:'BD'},
+    {u:'thanach', p:'Sales@UB2025', role:'sales',   name:'ธนัช พุ่มวงษ์',         zone:'UB'},
+  ];
+  localStorage.setItem(UK,JSON.stringify(d));
+  return d;
+}
 
 // AUDIT
 function addA(action,user,detail){
@@ -474,15 +620,21 @@ async function apiP(a,d){if(!GAS)throw new Error('ยังไม่ได้ต
 
 // MASTER
 async function loadMaster(){
+  if(!GAS){
+    toast('กรุณาตั้งค่า GAS URL ในหน้า Admin ก่อนใช้งาน',true);
+    setTimeout(loadDraft,100);
+    return;
+  }
   try{
-    const r=await api('getMasterData');
-    if(!r.ok)throw new Error(r.error);
-    MD=r; pop();
-    // รอ dropdown render เสร็จ แล้วค่อย restore draft
+    toast('กำลังโหลดข้อมูลจาก Google Sheets...');
+    const r = await api('getMasterData');
+    if(!r.ok) throw new Error(r.error);
+    MD = r;
+    pop();
     setTimeout(loadDraft, 200);
+    toast('โหลดข้อมูลสำเร็จ ✓');
   } catch(e){
-    toast('โหลดข้อมูลไม่สำเร็จ: '+e.message+' (ทำงาน offline ได้ แต่ dropdown ว่าง)',true);
-    // แม้ไม่มี GAS ก็ยัง restore draft ได้บางส่วน
+    toast('โหลดข้อมูลไม่สำเร็จ: '+e.message, true);
     setTimeout(loadDraft, 100);
   }
 }
@@ -490,33 +642,118 @@ async function loadMaster(){
 function pop(){
   if(!MD)return;
   sel('fz',MD.zones,true);sel('fdp',MD.depts,true);sel('fps',MD.positions,true);
-  sel('fop',MD.products,true);sel('fbg',MD.budgetTypes,true);sel('fmn',MD.months,true);
-  sel('fdz',MD.depts,true);sel('fdpd',MD.products,true);
+  selWithOther('fop',MD.products,true);
+  sel('fbg',MD.budgetTypes,true);sel('fmn',MD.months,true);
+  sel('fdz',MD.depts,true);selWithOther('fdpd',MD.products,true);
   sel('dz',MD.zones,true);sel('nz',MD.zones,true);
   document.getElementById('fd').value=new Date().toISOString().split('T')[0];
   document.getElementById('ffs').value=new Date().getFullYear()+543;
   document.getElementById('fyr').value=new Date().getFullYear();
-  if(CU?.role==='sales'&&CU?.zone){const z=document.getElementById('fz');if(z){z.value=CU.zone;onZ();}}}
+  if(CU?.role==='sales'&&CU?.zone){const z=document.getElementById('fz');if(z){z.value=CU.zone;onZ();}}
+}
 
-function sel(id,arr,blank=false){const el=document.getElementById(id);if(!el)return;const c=el.value;el.innerHTML=blank?'<option value="">-- เลือก --</option>':'';(arr||[]).forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;el.appendChild(o);});if(c)el.value=c;}
+function sel(id,arr,blank=false){
+  const el=document.getElementById(id);if(!el)return;
+  const c=el.value;el.innerHTML=blank?'<option value="">-- เลือก --</option>':'';
+  (arr||[]).forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;el.appendChild(o);});
+  if(c)el.value=c;
+}
 
-function onZ(){const z=document.getElementById('fz').value;sel('frp',(MD?.reps?.[z]||[]),true);const hs=MD?.hospitals?.[z]||[];const s=document.getElementById('fh');s.innerHTML='<option value="">-- เลือกโรงพยาบาล --</option>';hs.forEach(h=>{const o=document.createElement('option');o.value=h.name;o.textContent=h.name;o.dataset.beds=h.beds;o.dataset.type=h.type;s.appendChild(o);});sel('dr',(MD?.reps?.[z]||[]),true);}
+function selWithOther(id,arr,blank=false){
+  const el=document.getElementById(id);if(!el)return;
+  const c=el.value;el.innerHTML=blank?'<option value="">-- เลือก --</option>':'';
+  (arr||[]).forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;el.appendChild(o);});
+  const oth=document.createElement('option');oth.value='__other__';oth.textContent='✏️ Other — พิมพ์เอง';el.appendChild(oth);
+  if(c)el.value=c;
+  if(!el.dataset.hasOther){el.dataset.hasOther='1';el.addEventListener('change',()=>onOtherSelect(el));}
+}
+
+function onOtherSelect(sel){
+  if(sel.value!=='__other__'){
+    const inp=document.getElementById('other_'+sel.id);
+    if(inp)inp.style.display='none';return;
+  }
+  let inp=document.getElementById('other_'+sel.id);
+  if(!inp){inp=document.createElement('input');inp.id='other_'+sel.id;inp.type='text';inp.className='fi';inp.placeholder='พิมพ์ชื่อสินค้า...';inp.style.marginTop='6px';sel.parentNode.appendChild(inp);}
+  inp.style.display='';inp.focus();
+  inp.oninput=()=>{sel.dataset.custom=inp.value;sd();};
+}
+
+function getProductVal(selId){
+  const el=document.getElementById(selId);if(!el)return'';
+  if(el.value==='__other__')return el.dataset.custom||'';
+  return el.value;
+}
+
+function onZ(){
+  const z=document.getElementById('fz').value;
+  sel('frp',(MD?.reps?.[z]||[]),true);
+  sel('dr',(MD?.reps?.[z]||[]),true);
+  const mainList=MD?.hospitals?.[z]||[];
+  const allList=MD?.allHospitals?.[z]||[];
+
+  // ดึง รพ.ที่เพิ่มเองใน localStorage
+  const localHosps = JSON.parse(localStorage.getItem('el_custom_hosps')||'{}')[z]||[];
+
+  const s=document.getElementById('fh');
+  s.innerHTML='<option value="">-- เลือกโรงพยาบาล --</option>';
+
+  if(mainList.length){
+    const g=document.createElement('optgroup');g.label='⭐ โรงพยาบาลโฟกัส';
+    mainList.forEach(h=>{const o=document.createElement('option');o.value=h.name;o.textContent=h.name;o.dataset.beds=h.beds||'';o.dataset.type=h.type||'';o.dataset.main='1';g.appendChild(o);});
+    s.appendChild(g);
+  }
+  const mainNames=new Set(mainList.map(h=>h.name));
+  const others=allList.filter(h=>!mainNames.has(h.name));
+  if(others.length){
+    const g=document.createElement('optgroup');g.label='โรงพยาบาลอื่นๆ ในเขต';
+    others.forEach(h=>{const o=document.createElement('option');o.value=h.name;o.textContent=h.name;o.dataset.beds=h.beds||'';o.dataset.type=h.type||'';o.dataset.main='0';g.appendChild(o);});
+    s.appendChild(g);
+  }
+  if(localHosps.length){
+    const g=document.createElement('optgroup');g.label='➕ โรงพยาบาลที่เพิ่มเอง';
+    localHosps.forEach(h=>{const o=document.createElement('option');o.value=h.name;o.textContent=h.name;o.dataset.beds=h.beds||'';o.dataset.type=h.type||'';o.dataset.main='0';g.appendChild(o);});
+    s.appendChild(g);
+  }
+  // ตัวเลือกเพิ่ม รพ.ใหม่
+  const oNew=document.createElement('option');oNew.value='__newhosp__';oNew.textContent='➕ เพิ่มโรงพยาบาลใหม่';s.appendChild(oNew);
+}
 
 function onH(){
   const s=document.getElementById('fh');
   const o=s.options[s.selectedIndex];
-  document.getElementById('fht').value=o.dataset?.type||'';
-  document.getElementById('fbd').value=o.dataset?.beds||'';
-  if(s.value){
-    // โหลดจาก localStorage ก่อนทันที ไม่ต้องรอ GAS
+  const isNew = s.value==='__newhosp__';
+  document.getElementById('gnewhosp').style.display=isNew?'':'none';
+  if(!isNew){
+    document.getElementById('fht').value=o.dataset?.type||'';
+    document.getElementById('fbd').value=o.dataset?.beds||'';
+  } else {
+    document.getElementById('fht').value='';
+    document.getElementById('fbd').value='';
+  }
+  if(s.value && !isNew){
     renderCtsSel(s.value);
-    // แล้วค่อย sync GAS async
     loadCts(s.value);
   } else {
-    // ล้าง dropdown ผู้ติดต่อ
     const ct=document.getElementById('fct');
     if(ct) ct.innerHTML='<option value="">-- เลือก หรือกรอกใหม่ --</option><option value="__new__">+ เพิ่มผู้ติดต่อใหม่</option>';
   }
+}
+
+// บันทึก รพ.ใหม่ลง localStorage
+function saveNewHosp(zone, name, type, beds){
+  if(!name) return;
+  const all=JSON.parse(localStorage.getItem('el_custom_hosps')||'{}');
+  if(!all[zone]) all[zone]=[];
+  if(!all[zone].find(h=>h.name===name)) all[zone].push({name,type,beds});
+  localStorage.setItem('el_custom_hosps',JSON.stringify(all));
+}
+
+// ดึงชื่อ รพ.ที่เลือก (รวม รพ.ใหม่)
+function getHospVal(){
+  const s=document.getElementById('fh');
+  if(s.value==='__newhosp__') return document.getElementById('fhnew').value.trim();
+  return s.value;
 }
 
 // CONTACTS — localStorage + GAS hybrid
@@ -582,12 +819,43 @@ function onCt() {
   const o = s.options[s.selectedIndex];
   const isN = s.value === '__new__';
   document.getElementById('gnw').style.display = isN ? '' : 'none';
-  if (!isN && o.dataset?.n) {
+  const editBtn = document.getElementById('btn-edit-ct');
+  if (!isN && s.value && o.dataset?.n) {
     document.getElementById('fps').value = o.dataset.ps || '';
     document.getElementById('ftel').value = o.dataset.ph || '';
-    // ถ้าเลือกคนเดิม แต่เบอร์/ตำแหน่งเปลี่ยน — ให้แก้ได้
+    // lock field ก่อน รอกด edit
+    document.getElementById('fps').setAttribute('readonly','');
+    document.getElementById('ftel').setAttribute('readonly','');
+    if(editBtn) editBtn.style.display='';
+  } else {
     document.getElementById('fps').removeAttribute('readonly');
     document.getElementById('ftel').removeAttribute('readonly');
+    if(editBtn) editBtn.style.display='none';
+  }
+}
+
+function toggleEditCt(){
+  const pos = document.getElementById('fps');
+  const tel = document.getElementById('ftel');
+  const btn = document.getElementById('btn-edit-ct');
+  const isLocked = pos.hasAttribute('readonly');
+  if(isLocked){
+    pos.removeAttribute('readonly'); tel.removeAttribute('readonly');
+    btn.textContent='💾 บันทึกแก้ไข'; btn.style.background='var(--gn)'; btn.style.color='#fff';
+    pos.focus();
+  } else {
+    // บันทึก
+    const s=document.getElementById('fct');
+    const o=s.options[s.selectedIndex];
+    const hosp=document.getElementById('fh').value;
+    if(o.dataset?.n && hosp){
+      addCtsLocal(hosp,{name:o.dataset.n, position:pos.value, phone:tel.value});
+      if(GAS) apiP('updateContact',{hospital:hosp,name:o.dataset.n,position:pos.value,phone:tel.value}).catch(()=>{});
+      o.dataset.ps=pos.value; o.dataset.ph=tel.value;
+      toast('บันทึกข้อมูลผู้ติดต่อแล้ว ✓');
+    }
+    pos.setAttribute('readonly',''); tel.setAttribute('readonly','');
+    btn.textContent='✏️ แก้ไข'; btn.style.background=''; btn.style.color='';
   }
 }
 
@@ -717,7 +985,18 @@ async function submitForm(){
   btn.innerHTML='<span class="sp2"></span> กำลังบันทึก...';
   const cs=document.getElementById('fct');const isN=cs.value==='__new__';
   let cn=isN?document.getElementById('fcn').value:(cs.options[cs.selectedIndex]?.dataset?.n||'');
-  const hosp2=document.getElementById('fh').value;
+  const hosp2 = getHospVal();
+  // ถ้าเป็น รพ.ใหม่ — บันทึกลง localStorage
+  const fhSel = document.getElementById('fh');
+  if(fhSel.value==='__newhosp__' && hosp2){
+    const z2 = document.getElementById('fz').value;
+    const ht2 = document.getElementById('fhtnew').value;
+    const bd2 = document.getElementById('fbdnew').value;
+    saveNewHosp(z2, hosp2, ht2, bd2);
+    // อัปเดต type/beds
+    document.getElementById('fht').value = ht2;
+    document.getElementById('fbd').value = bd2;
+  }
   const pos2=document.getElementById('fps').value;
   const tel2=document.getElementById('ftel').value;
   if(isN&&cn){
@@ -730,7 +1009,7 @@ async function submitForm(){
     date:document.getElementById('fd').value,
     zone:document.getElementById('fz').value,
     rep:document.getElementById('frp').value,
-    hospital:document.getElementById('fh').value,
+    hospital:hosp2,
     hospType:document.getElementById('fht').value,
     beds:document.getElementById('fbd').value,
     dept:document.getElementById('fdp').value,
@@ -738,14 +1017,14 @@ async function submitForm(){
     position:document.getElementById('fps').value,
     phone:document.getElementById('ftel').value,
     detail:document.getElementById('fdt').value,
-    newOppProduct:document.getElementById('fop').value,
+    newOppProduct:getProductVal('fop'),
     newOppPrice:document.getElementById('fpr').value,
     budgetType:document.getElementById('fbg').value,
     fiscalYear:document.getElementById('ffs').value,
     deliveryMonth:document.getElementById('fmn').value,
     deliveryYear:document.getElementById('fyr').value,
     demoZone:document.getElementById('fdz').value,
-    demoProduct:document.getElementById('fdpd').value,
+    demoProduct:getProductVal('fdpd'),
     demoResult:document.getElementById('fdr').value,
     submittedBy:CU?.u,
     // GPS fields
@@ -763,12 +1042,13 @@ async function submitForm(){
 
 function resetForm(){
   ['fz','frp','fh','fdp','fct','fps','fop','fbg','fmn','fdz','fdpd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['fht','fbd','ftel','fdt','fpr','fdr','fcn'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fht','fbd','ftel','fdt','fpr','fdr','fcn','fhnew','fhtnew','fbdnew'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('fd').value=new Date().toISOString().split('T')[0];
   document.getElementById('gnw').style.display='none';
+  document.getElementById('gnewhosp').style.display='none';
+  const editBtn=document.getElementById('btn-edit-ct');if(editBtn)editBtn.style.display='none';
   document.querySelectorAll('.fe').forEach(e=>e.classList.remove('on'));
   document.querySelectorAll('.er').forEach(e=>e.classList.remove('er'));
-  // reset GPS
   _gpsCache=null;
   setGpsUI('idle','ยังไม่ได้ดึงตำแหน่ง','ระบบจะขอ GPS อัตโนมัติเมื่อกดบันทึก');
 }
@@ -834,8 +1114,20 @@ function setPer(p,btn){curPer=p;document.querySelectorAll('.pt').forEach(t=>t.cl
 function renderDash(){
   const now=new Date();const from=curPer==='monthly'?new Date(now.getFullYear(),now.getMonth(),1):(()=>{const s=new Date(now);s.setDate(now.getDate()-now.getDay()+1);s.setHours(0,0,0,0);return s;})();
   const recs=RECS.filter(r=>{const d=new Date(r.date);return d>=from&&d<=now;});
-  const hM=MD?Object.values(MD.hospitals).flat().filter(h=>h.type?.includes('รพศ')||h.type?.includes('รพท')||h.type?.includes('โรงเรียน')).map(h=>h.name):[];
-  const tA=MD?Object.values(MD.hospitals).flat().length:30;const tM=hM.length||10;const tG=tA-tM;
+  // ดึงรพ.หลัก (สีเหลือง) จากข้อมูลที่ embed ไว้
+  const zoneFilter=document.getElementById('dz')?.value||'';
+  let hM=[];
+  if(MD?.mainHospNames){
+    if(zoneFilter){
+      hM=MD.mainHospNames[zoneFilter]||[];
+    } else {
+      hM=[...new Set(Object.values(MD.mainHospNames).flat())];
+    }
+  }
+  const allHospArr = zoneFilter
+    ? (MD?.allHospitals?.[zoneFilter]||[]).map(h=>h.name)
+    : MD?.allHospitals ? [...new Set(Object.values(MD.allHospitals).flat().map(h=>h.name))] : [];
+  const tA=allHospArr.length||30;const tM=hM.length||10;const tG=Math.max(0,tA-tM);
   const vis=[...new Set(recs.map(r=>r.hospital))];const vA=vis.length;const vM=vis.filter(h=>hM.includes(h)).length;const vG=vA-vM;
   const oR=recs.filter(r=>r.newOppProduct);const oA=oR.length;const oM=oR.filter(r=>hM.includes(r.hospital)).length;const oG=oA-oM;
   const dR=recs.filter(r=>r.demoProduct);const dA=dR.length;const dM=dR.filter(r=>hM.includes(r.hospital)).length;const dG=dA-dM;
@@ -934,11 +1226,6 @@ function delAdminCt(hosp,idx){
   renderAdminCts();toast('ลบแล้ว');
 }
 
-function renderUsers(){const us=getU();const rb={sales:'tb2',manager:'tg2',admin:'ta2'};const rt={sales:'ผู้แทนขาย',manager:'ผู้จัดการ',admin:'Admin'};document.getElementById('ul').innerHTML=us.map((u,i)=>`<div class="ur"><div class="ua">${u.name.charAt(0)}</div><div style="flex:1"><div style="font-size:14px;font-weight:500">${u.name}</div><div style="font-size:12px;color:var(--t3);font-family:var(--mono)">${u.u} · ${u.zone||'ทุกเขต'}</div></div><span class="tg ${rb[u.role]}">${rt[u.role]}</span>${u.u!==CU.u?`<button class="bn bd bsm" onclick="delUser(${i})">ลบ</button>`:''}</div>`).join('');}
-
-function addUser(){const u=document.getElementById('nu').value.trim().toLowerCase();const n=document.getElementById('nn').value.trim();const p=document.getElementById('np').value;const role=document.getElementById('nrl').value;const z=document.getElementById('nz').value;if(!u||!n||!p){toast('กรอกข้อมูลให้ครบ',true);return;}if(p.length<6){toast('รหัสผ่านอย่างน้อย 6 ตัว',true);return;}const us=getU();if(us.find(x=>x.u===u)){toast('Username นี้มีแล้ว',true);return;}us.push({u,p,role,name:n,zone:z});saveU(us);addA('ADD_USER',CU.u,'Added:'+u+'('+role+')');renderUsers();toast('เพิ่ม User สำเร็จ');}
-
-function delUser(i){if(!confirm('ลบ User นี้?'))return;const us=getU();addA('DEL_USER',CU.u,'Del:'+us[i].u);us.splice(i,1);saveU(us);renderUsers();toast('ลบแล้ว');}
 
 function saveGas(){const url=document.getElementById('gurl').value.trim();if(!url){toast('กรุณากรอก URL',true);return;}GAS=url;localStorage.setItem('el_gas',url);toast('บันทึก URL แล้ว');loadMaster();}
 
@@ -952,6 +1239,7 @@ function toast(msg,err=false){const el=document.getElementById('toast');document
 // BOOT
 if(chkS()){document.getElementById('lw').style.display='none';initApp();}
 document.getElementById('lu').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('lp').focus();});
+
 </script>
 </body>
 </html>
