@@ -356,20 +356,28 @@ tr:hover td{background:var(--s2);color:var(--t1)}
 <div class="pg" id="pg-myreport">
   <div class="ptt">ผลการกรอกรายงานของฉัน</div>
   <div class="psb" id="my-rep-sub">รายงานที่กรอกไปทั้งหมด</div>
+
+  <!-- KPI ส่วนตัว -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px" id="my-kpi-row">
+    <div class="kc kb"><div class="kl">เข้าพบทั้งหมด</div><div class="kv" id="mk-h" style="color:var(--acc)">—</div></div>
+    <div class="kc kg"><div class="kl">New Opportunity</div><div class="kv" id="mk-o" style="color:var(--gn)">—</div></div>
+    <div class="kc ka"><div class="kl">Demo</div><div class="kv" id="mk-d" style="color:var(--am)">—</div></div>
+    <div class="kc kp"><div class="kl">มูลค่ารวม</div><div class="kv" id="mk-v" style="color:var(--pu)">—</div></div>
+  </div>
+
+  <!-- รพ.โฟกัสที่ยังไม่ได้เข้า -->
+  <div class="cd" style="margin-bottom:14px">
+    <div class="ch">⭐ รพ.โฟกัสที่ยังไม่ได้เข้าพบ</div>
+    <div id="my-pending-hosps" style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0"></div>
+  </div>
+
+  <!-- ตารางรายงาน + แก้ไข -->
   <div class="cd">
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <button class="bn bs bsm" onclick="loadMyReport()">↻ รีเฟรช</button>
       <span id="my-rec-count" style="font-size:12px;color:var(--t3);font-family:var(--mono)"></span>
     </div>
-    <div class="tw">
-      <table>
-        <thead><tr>
-          <th>วันที่</th><th>โรงพยาบาล</th><th>แผนก</th><th>ผู้ติดต่อ</th>
-          <th>New Opp</th><th>ราคา</th><th>Demo</th><th>📍</th>
-        </tr></thead>
-        <tbody id="my-report-body"></tbody>
-      </table>
-    </div>
+    <div id="my-report-cards"></div>
   </div>
 </div>
 
@@ -1243,33 +1251,139 @@ function saveLn(){const t=document.getElementById('lnt').value.trim();if(!t)retu
 async function testLn(){const tok=localStorage.getItem(LNK);if(!tok){toast('บันทึก Token ก่อน',true);return;}const r=document.getElementById('lnr');r.textContent='⏳ กำลังส่ง...';try{await fetch('https://notify-api.line.me/api/notify',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/x-www-form-urlencoded'},body:'message='+encodeURIComponent('\n✅ ทดสอบ Earthline Sales Notify สำเร็จ!')});r.textContent='✅ ส่งสำเร็จ';r.style.color='var(--gn)';}catch(e){r.textContent='❌ '+e.message;r.style.color='var(--rd)';}}
 
 // DASHBOARD
-// ═══ MY REPORT (sales ดูผลตัวเอง) ════════════════════════
+// ═══ MY REPORT ════════════════════════════════════════════
+let MY_RECS = [];
+
 async function loadMyReport(){
-  const sub = document.getElementById('my-rep-sub');
-  const cnt = document.getElementById('my-rec-count');
-  const body= document.getElementById('my-report-body');
-  if(!body) return;
-  body.innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--t3)"><span class="sp2"></span> กำลังโหลด...</td></tr>`;
+  const sub  = document.getElementById('my-rep-sub');
+  const cnt  = document.getElementById('my-rec-count');
+  const cards= document.getElementById('my-report-cards');
+  if(!cards) return;
+  cards.innerHTML=`<div style="text-align:center;color:var(--t3);padding:20px"><span class="sp2"></span> กำลังโหลด...</div>`;
+
   try{
-    const r = await api('getRecords',{rep: CU?.name||CU?.u, zone: CU?.zone||''});
+    const r = await api('getRecords',{zone:CU?.zone||''});
     if(!r.ok) throw new Error(r.error);
-    const recs = r.data.filter(rec => rec.rep === (CU?.name||CU?.u) || rec.submittedBy === CU?.u);
-    if(cnt) cnt.textContent = `${recs.length} รายการ`;
-    if(sub) sub.textContent = `รายงานของ ${CU?.name||CU?.u} — เขต ${CU?.zone||'ทุกเขต'}`;
-    body.innerHTML = recs.length ? recs.slice().reverse().map(r=>`
-      <tr>
-        <td style="font-family:var(--mono);font-size:11px;white-space:nowrap">${r.date||'—'}</td>
-        <td style="font-weight:500;font-size:13px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.hospital||'—'}</td>
-        <td>${r.dept||'—'}</td>
-        <td style="font-size:12px">${r.contactName||'—'}</td>
-        <td>${r.newOppProduct?`<span class="tg tg2">${r.newOppProduct}</span>`:'—'}</td>
-        <td style="font-family:var(--mono);font-size:12px">${r.newOppPrice?Number(r.newOppPrice).toLocaleString():'—'}</td>
-        <td>${r.demoProduct?`<span class="tg ta2">${r.demoProduct}</span>`:'—'}</td>
-        <td>${r.mapsUrl?`<a href="${r.mapsUrl}" target="_blank" style="color:var(--acc2);text-decoration:none">📍</a>`:'—'}</td>
-      </tr>`).join('')
-    : `<tr><td colspan="8" style="text-align:center;color:var(--t3);padding:16px">ยังไม่มีรายงาน</td></tr>`;
+    // กรองเฉพาะของตัวเอง
+    MY_RECS = r.data.filter(rec =>
+      rec.rep===(CU?.name||CU?.u) || rec.submittedBy===CU?.u
+    ).sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+    if(cnt) cnt.textContent=`${MY_RECS.length} รายการ`;
+    if(sub) sub.textContent=`รายงานของ ${CU?.name||CU?.u} — เขต ${CU?.zone||'ทุกเขต'}`;
+
+    // KPI
+    const visited = new Set(MY_RECS.map(r=>r.hospital)).size;
+    const opps    = MY_RECS.filter(r=>r.newOppProduct).length;
+    const demos   = MY_RECS.filter(r=>r.demoProduct).length;
+    const val     = MY_RECS.reduce((s,r)=>s+(parseFloat(r.newOppPrice)||0),0);
+    document.getElementById('mk-h').textContent = visited;
+    document.getElementById('mk-o').textContent = opps;
+    document.getElementById('mk-d').textContent = demos;
+    document.getElementById('mk-v').textContent = val?(val/1e6).toFixed(1)+'M':'—';
+
+    // รพ.โฟกัสที่ยังไม่เข้า
+    const zone = CU?.zone||'';
+    const focusHosps = zone ? (MD?.mainHospNames?.[zone]||[]) : [];
+    const visitedSet = new Set(MY_RECS.map(r=>r.hospital));
+    const pending = focusHosps.filter(h=>!visitedSet.has(h));
+    const pendEl = document.getElementById('my-pending-hosps');
+    if(pendEl){
+      pendEl.innerHTML = pending.length
+        ? pending.map(h=>`<span style="font-size:12px;padding:3px 10px;border-radius:6px;border:1px solid var(--rd);color:var(--rd);background:rgba(239,68,68,.06)">⚡ ${h}</span>`).join('')
+        : `<span style="font-size:13px;color:var(--gn)">✓ เข้าพบ รพ.โฟกัสครบแล้ว!</span>`;
+    }
+
+    // Cards
+    cards.innerHTML = MY_RECS.length
+      ? MY_RECS.map((rec,i)=>renderMyCard(rec,i)).join('')
+      : `<div style="text-align:center;color:var(--t3);padding:24px">ยังไม่มีรายงาน</div>`;
+
   }catch(e){
-    body.innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--rd)">${e.message}</td></tr>`;
+    cards.innerHTML=`<div style="color:var(--rd);padding:12px">${e.message}</div>`;
+  }
+}
+
+function renderMyCard(rec, idx){
+  const isMain = MD?.mainHospNames?.[rec.zone]?.includes(rec.hospital);
+  return `<div class="cd" style="margin-bottom:10px" id="mycard-${idx}">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px">
+      <div>
+        <div style="font-size:15px;font-weight:600">${rec.hospital||'—'}${isMain?' <span class="tg tb2">โฟกัส</span>':''}</div>
+        <div style="font-size:12px;color:var(--t3);font-family:var(--mono)">${rec.date||'—'} · ${rec.zone||'—'}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        ${rec.mapsUrl?`<a href="${rec.mapsUrl}" target="_blank" class="bn bs bsm" style="text-decoration:none">📍</a>`:''}
+        <button class="bn bs bsm" onclick="toggleEditCard(${idx})">✏️ แก้ไข</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+      <div><span style="color:var(--t3)">แผนก:</span> ${rec.dept||'—'}</div>
+      <div><span style="color:var(--t3)">ผู้ติดต่อ:</span> ${rec.contactName||'—'} ${rec.position?`(${rec.position})`:''}</div>
+      <div><span style="color:var(--t3)">เบอร์:</span> ${rec.phone||'—'}</div>
+      <div><span style="color:var(--t3)">รายละเอียด:</span> ${rec.detail||'—'}</div>
+      ${rec.newOppProduct?`<div class="gf"><span style="color:var(--t3)">New Opp:</span> <span class="tg tg2">${rec.newOppProduct}</span> ${rec.newOppPrice?'· '+Number(rec.newOppPrice).toLocaleString()+' ฿':''} ${rec.budgetType?'· '+rec.budgetType:''}</div>`:''}
+      ${rec.demoProduct?`<div class="gf"><span style="color:var(--t3)">Demo:</span> <span class="tg ta2">${rec.demoProduct}</span> ${rec.demoResult?'· '+rec.demoResult:''}</div>`:''}
+    </div>
+    <!-- Edit form (hidden by default) -->
+    <div id="edit-${idx}" style="display:none;margin-top:14px;padding:14px;background:var(--s2);border-radius:10px;border:1px solid var(--b1)">
+      <div class="fsc" style="margin-bottom:12px">แก้ไขรายงาน</div>
+      <div class="g2" style="margin-bottom:10px">
+        <div><label class="fl">แผนก</label>
+          <input class="fi" id="e-dept-${idx}" value="${rec.dept||''}"></div>
+        <div><label class="fl">ผู้ติดต่อ</label>
+          <input class="fi" id="e-ct-${idx}" value="${rec.contactName||''}"></div>
+        <div><label class="fl">เบอร์</label>
+          <input class="fi" id="e-tel-${idx}" value="${rec.phone||''}"></div>
+        <div><label class="fl">สินค้า New Opp</label>
+          <input class="fi" id="e-opp-${idx}" value="${rec.newOppProduct||''}"></div>
+        <div><label class="fl">ราคา (บาท)</label>
+          <input class="fi" type="number" id="e-price-${idx}" value="${rec.newOppPrice||''}"></div>
+        <div><label class="fl">สินค้า Demo</label>
+          <input class="fi" id="e-demo-${idx}" value="${rec.demoProduct||''}"></div>
+        <div class="gf"><label class="fl">รายละเอียด</label>
+          <textarea class="ft" id="e-detail-${idx}" style="min-height:60px">${rec.detail||''}</textarea></div>
+        <div class="gf"><label class="fl">ผลลัพธ์ Demo</label>
+          <input class="fi" id="e-dr-${idx}" value="${rec.demoResult||''}"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="bn bp bsm" onclick="saveMyCard(${idx},'${rec.id||''}')">💾 บันทึก</button>
+        <button class="bn bs bsm" onclick="toggleEditCard(${idx})">ยกเลิก</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleEditCard(idx){
+  const el = document.getElementById(`edit-${idx}`);
+  if(el) el.style.display = el.style.display==='none'?'':'none';
+}
+
+async function saveMyCard(idx, recordId){
+  const rec = MY_RECS[idx];
+  if(!rec) return;
+  const updates = {
+    id:           recordId,
+    dept:         document.getElementById(`e-dept-${idx}`)?.value||'',
+    contactName:  document.getElementById(`e-ct-${idx}`)?.value||'',
+    phone:        document.getElementById(`e-tel-${idx}`)?.value||'',
+    newOppProduct:document.getElementById(`e-opp-${idx}`)?.value||'',
+    newOppPrice:  document.getElementById(`e-price-${idx}`)?.value||'',
+    demoProduct:  document.getElementById(`e-demo-${idx}`)?.value||'',
+    detail:       document.getElementById(`e-detail-${idx}`)?.value||'',
+    demoResult:   document.getElementById(`e-dr-${idx}`)?.value||'',
+  };
+  try{
+    const r = await apiP('updateRecord', updates);
+    if(!r.ok) throw new Error(r.error||'บันทึกไม่สำเร็จ');
+    Object.assign(rec, updates);
+    addA('EDIT_RECORD', CU?.u, `Edited: ${rec.hospital} ${rec.date}`);
+    // อัปเดต card
+    const cardEl = document.getElementById(`mycard-${idx}`);
+    if(cardEl) cardEl.outerHTML = renderMyCard(rec, idx);
+    toast('บันทึกสำเร็จ ✓');
+  }catch(e){
+    toast('บันทึกไม่สำเร็จ: '+e.message, true);
   }
 }
 
