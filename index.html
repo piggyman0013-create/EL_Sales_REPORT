@@ -685,34 +685,43 @@ async function apiP(a,d){if(!GAS)throw new Error('ยังไม่ได้ต
 
 // MASTER
 async function loadMaster(){
-  if(!GAS){
-    toast('กรุณาตั้งค่า GAS URL ในหน้า Admin ก่อนใช้งาน',true);
-    setTimeout(loadDraft,100);
-    return;
-  }
-  try{
-    toast('กำลังโหลดข้อมูลจาก Google Sheets...');
-    const r = await api('getMasterData');
-    if(!r.ok) throw new Error(r.error);
-    MD = r;
+  // โหลด MASTER_DATA ที่ embed ไว้ก่อนเลย — ใช้งานได้ทันที ไม่ต้องรอ GAS
+  if(typeof MASTER_DATA !== 'undefined'){
+    MD = MASTER_DATA;
     pop();
     setTimeout(loadDraft, 200);
-    toast('โหลดข้อมูลสำเร็จ ✓');
+  }
+  if(!GAS){
+    if(typeof MASTER_DATA === 'undefined')
+      toast('กรุณาตั้งค่า GAS URL ในหน้า Admin ก่อนใช้งาน', true);
+    return;
+  }
+  // sync จาก GAS เพื่ออัปเดตข้อมูลล่าสุด (ไม่ block การใช้งาน)
+  try{
+    const r = await api('getMasterData');
+    if(!r.ok) throw new Error(r.error);
+    // ถ้า GAS ส่ง depts มาครบกว่า embedded — ใช้ GAS
+    if((r.depts||[]).length >= (MD?.depts||[]).length){
+      MD = r;
+      pop();
+    }
   } catch(e){
-    toast('โหลดข้อมูลไม่สำเร็จ: '+e.message, true);
-    setTimeout(loadDraft, 100);
+    // GAS ผิดพลาด — ใช้ embedded ต่อ (ไม่แสดง error)
+    console.warn('GAS sync failed, using embedded data:', e.message);
   }
 }
 
 function pop(){
   if(!MD)return;
-  sel('fz',MD.zones,true);sel('fdp',MD.depts,true);sel('fps',MD.positions,true);
-  selWithOther('fop',MD.products,true);
-  selWithOther('fdp',MD.depts,true);   // แผนก + อื่นๆ
-  sel('fbg',MD.budgetTypes,true);sel('fmn',MD.months,true);
-  selWithOther('fdz',MD.depts,true);   // Demo แผนก + อื่นๆ
-  selWithOther('fdpd',MD.products,true);
-  // Dashboard zone dropdown — blank option = "ทุกเขต"
+  sel('fz',MD.zones,true);
+  sel('fps',MD.positions,true);
+  selWithOther('fdp',MD.depts,true);     // แผนก + อื่นๆ
+  selWithOther('fop',MD.products,true);  // สินค้า + อื่นๆ
+  sel('fbg',MD.budgetTypes,true);
+  sel('fmn',MD.months,true);
+  selWithOther('fdz',MD.depts,true);     // Demo แผนก + อื่นๆ
+  selWithOther('fdpd',MD.products,true); // Demo สินค้า + อื่นๆ
+  // Dashboard zone dropdown
   const dzEl=document.getElementById('dz');
   if(dzEl){dzEl.innerHTML='<option value="">ทุกเขต</option>';(MD.zones||[]).forEach(z=>{const o=document.createElement('option');o.value=o.textContent=z;dzEl.appendChild(o);});}
   sel('nz',MD.zones,true);
