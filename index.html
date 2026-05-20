@@ -459,7 +459,7 @@ tr:hover td{background:var(--s2);color:var(--t1)}
 
 <script>
 // CONFIG
-let GAS=localStorage.getItem('el_gas')||'https://script.google.com/macros/s/AKfycbxme6gzKmdtdxtFhk1BxMJBv1Z0qvhARgKyLokEkWzIZZS-mi_ufKA5ifXYwx47EZ82Hw/exec';
+let GAS=localStorage.getItem('el_gas')||'https://script.google.com/macros/s/AKfycbxbmk9pX13kHWh0nHytPMc97JGpiwbkPp68t5khnMXyVnzBqTZTo1xSH1eu-Ph8aCLWUw/exec';
 const LNK='el_ln',UK='el_users',SK='el_sess',DK='el_draft',AK='el_audit';
 
 // USERS
@@ -1183,7 +1183,7 @@ async function submitForm(){
     if(!r.ok)throw new Error(r.error);
     addA('SUBMIT',CU?.u,`${data.hospital} | GPS:${locLabel}`);
     sendLN(data);clearDraft();resetForm();
-    toast('บันทึกรายงานสำเร็จ ✓' + (lat?` 📍 ${locLabel.split(',')[0]}`:''));
+    toast('บันทึกรายงานสำเร็จ ✓' + (lat?` 📍 ${String(locLabel).split(',')[0]}`:''));
   }catch(e){toast('บันทึกไม่สำเร็จ: '+e.message,true);}
   finally{btn.disabled=false;btn.textContent='บันทึกรายงาน';}
 }
@@ -1397,40 +1397,78 @@ async function saveMyCard(idx, recordId){
 }
 
 // ═══ FOCUS HOSP TABLE (Dashboard ข้อ 3) ══════════════════
-function renderFocusHospTable(recs){
+function renderFocusHospTable(allRecs){
   const el = document.getElementById('focus-hosp-table');
   if(!el || !MD?.mainHospNames) return;
 
   const zoneFilter = document.getElementById('dz')?.value||'';
   const zones = zoneFilter ? [zoneFilter] : MD.zones||[];
 
-  // สร้าง map ว่า รพ.ไหนถูก visit ในช่วงนี้
-  const visited = new Set(recs.map(r=>r.hospital));
+  // หา period label
+  const periodLabel = curPer==='monthly' ? 'เดือนนี้' : 'อาทิตย์นี้';
+
+  // คำนวณ from date ตาม period
+  const now = new Date();
+  const from = curPer==='monthly'
+    ? new Date(now.getFullYear(), now.getMonth(), 1)
+    : (()=>{ const s=new Date(now); const day=s.getDay(); const diff=day===0?-6:1-day; s.setDate(s.getDate()+diff); s.setHours(0,0,0,0); return s; })();
+
+  const norm = s => (s||'').trim().replace(/\s+/g,' ').toLowerCase();
+
+  // visited ในช่วง period
+  const visitedPeriod = new Set(
+    (allRecs||[])
+      .filter(r=>{ const d=parseDate(r.date); return d && d>=from && d<=now; })
+      .map(r=>norm(r.hospital))
+  );
+  // visited ตลอดเวลา
+  const visitedAll = new Set((allRecs||[]).map(r=>norm(r.hospital)));
 
   let html = '';
   zones.forEach(zone => {
     const focusHosps = MD.mainHospNames[zone]||[];
     if(!focusHosps.length) return;
-    const visited_count = focusHosps.filter(h=>visited.has(h)).length;
-    html += `<div style="margin-bottom:14px">
+
+    const countPeriod = focusHosps.filter(h=>visitedPeriod.has(norm(h))).length;
+    const countAll    = focusHosps.filter(h=>visitedAll.has(norm(h))).length;
+    const pct = focusHosps.length ? Math.round(countPeriod/focusHosps.length*100) : 0;
+
+    html += `<div style="margin-bottom:18px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <span class="tg tb2" style="font-size:12px">${zone}</span>
-        <span style="font-size:13px;font-weight:600">เข้าพบแล้ว ${visited_count}/${focusHosps.length}</span>
-        <div style="flex:1;height:6px;background:var(--s3);border-radius:3px;overflow:hidden">
-          <div style="height:100%;width:${focusHosps.length?Math.round(visited_count/focusHosps.length*100):0}%;background:var(--acc);border-radius:3px;transition:width .4s"></div>
+        <div>
+          <span style="font-size:13px;font-weight:600">${periodLabel}: ${countPeriod}/${focusHosps.length}</span>
+          <span style="font-size:11px;color:var(--t3);margin-left:8px">ทั้งหมด: ${countAll}/${focusHosps.length}</span>
         </div>
+        <div style="flex:1;height:8px;background:var(--s3);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:var(--acc);border-radius:4px;transition:width .5s"></div>
+        </div>
+        <span style="font-size:11px;font-family:var(--mono);color:var(--t3);min-width:32px;text-align:right">${pct}%</span>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${focusHosps.map(h=>{
-          const isVisited = visited.has(h);
-          return `<span style="font-size:12px;padding:3px 10px;border-radius:6px;border:1px solid ${isVisited?'var(--gn)':'var(--b1)'};color:${isVisited?'var(--gn)':'var(--t3)'};background:${isVisited?'rgba(16,185,129,.08)':'transparent'}">
-            ${isVisited?'✓ ':''} ${h}
-          </span>`;
+        ${focusHosps.map(h => {
+          const inPeriod = visitedPeriod.has(norm(h));
+          const inAll    = visitedAll.has(norm(h));
+          // เขียว = เข้าพบใน period นี้
+          // เหลือง = เคยเข้าพบแต่ไม่ใช่ period นี้
+          // เทา = ยังไม่เคยเข้าเลย
+          const bdr = inPeriod ? 'var(--gn)' : inAll ? 'var(--am)' : 'var(--b1)';
+          const col = inPeriod ? 'var(--gn)' : inAll ? 'var(--am)' : 'var(--t3)';
+          const bg  = inPeriod ? 'rgba(16,185,129,.08)' : inAll ? 'rgba(245,158,11,.06)' : 'transparent';
+          const pre = inPeriod ? '✓ ' : inAll ? '◷ ' : '';
+          const tip = inAll && !inPeriod ? `title="เคยเข้าพบแล้ว แต่ไม่ใช่${periodLabel}"` : '';
+          return `<span ${tip} style="font-size:12px;padding:3px 10px;border-radius:6px;border:1px solid ${bdr};color:${col};background:${bg};cursor:default">${pre}${h}</span>`;
         }).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--t3);margin-top:6px;display:flex;gap:14px">
+        <span>✓ เขียว = เข้าพบ${periodLabel}</span>
+        <span>◷ เหลือง = เคยเข้าพบ (ไม่ใช่${periodLabel})</span>
+        <span>เทา = ยังไม่เคย</span>
       </div>
     </div>`;
   });
-  el.innerHTML = html || '<div style="color:var(--t3);font-size:13px">ไม่มีข้อมูล</div>';
+
+  el.innerHTML = html || '<div style="color:var(--t3);font-size:13px;padding:8px">ไม่มีข้อมูล</div>';
 }
 
 function onDashZone(){
@@ -1443,13 +1481,54 @@ function onDashZone(){
   loadDash();
 }
 
-async function loadDash(){const now=new Date();const dl=document.getElementById('dlb');if(dl)dl.textContent=now.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});try{const z=document.getElementById('dz')?.value||'';const rep=document.getElementById('dr')?.value||'';const r=await api('getRecords',{zone:z,rep});if(r.ok){RECS=r.data;renderDash();}}catch(e){toast('โหลด Dashboard ไม่สำเร็จ',true);}}
+async function loadDash(){
+  const now=new Date();
+  const dl=document.getElementById('dlb');
+  if(dl)dl.textContent=now.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+  try{
+    const z=document.getElementById('dz')?.value||'';
+    const rep=document.getElementById('dr')?.value||'';
+    const r=await api('getRecords',{zone:z,rep});
+    if(!r.ok) throw new Error(r.error||'GAS error');
+    RECS=r.data;
+    renderDash();
+  }catch(e){
+    console.error('loadDash error:', e);
+    toast('โหลด Dashboard ไม่สำเร็จ: '+e.message, true);
+  }
+}
 
 function setPer(p,btn){curPer=p;document.querySelectorAll('.pt').forEach(t=>t.classList.remove('on'));btn.classList.add('on');renderDash();}
 
+function parseDate(str){
+  if(!str) return null;
+  // yyyy-mm-dd
+  if(/^\d{4}-\d{2}-\d{2}/.test(str)) return new Date(str);
+  // dd/mm/yyyy หรือ dd-mm-yyyy
+  const m1 = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if(m1) return new Date(+m1[3], +m1[2]-1, +m1[1]);
+  // mm/dd/yyyy (US format)
+  const m2 = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if(m2) return new Date(+m2[3]<100?2000+ +m2[3]: +m2[3], +m2[1]-1, +m2[2]);
+  // ลอง parse ตรง
+  const d = new Date(str);
+  return isNaN(d) ? null : d;
+}
+
 function renderDash(){
-  const now=new Date();const from=curPer==='monthly'?new Date(now.getFullYear(),now.getMonth(),1):(()=>{const s=new Date(now);s.setDate(now.getDate()-now.getDay()+1);s.setHours(0,0,0,0);return s;})();
-  const recs=RECS.filter(r=>{const d=new Date(r.date);return d>=from&&d<=now;});
+  const now=new Date();
+  // รายสัปดาห์: จันทร์-อาทิตย์ของอาทิตย์ปัจจุบัน
+  // รายเดือน: วันแรกของเดือนนี้
+  const from=curPer==='monthly'
+    ?new Date(now.getFullYear(),now.getMonth(),1)
+    :(()=>{const s=new Date(now);const day=s.getDay();const diff=day===0?-6:1-day;s.setDate(s.getDate()+diff);s.setHours(0,0,0,0);return s;})();
+
+  // filter — ใช้ parseDate แทน new Date() ตรงๆ
+  const recs=RECS.filter(r=>{
+    const d=parseDate(r.date);
+    if(!d||isNaN(d)) return false;
+    return d>=from && d<=now;
+  });
   // ดึงรพ.หลัก (สีเหลือง) จากข้อมูลที่ embed ไว้
   const zoneFilter=document.getElementById('dz')?.value||'';
   let hM=[];
@@ -1489,7 +1568,7 @@ function renderDash(){
     <td>${r.newOppProduct?`<span class="tg tg2">${r.newOppProduct}</span>`:'—'}</td>
     <td>${r.demoProduct?`<span class="tg ta2">${r.demoProduct}</span>`:'—'}</td>
     <td style="font-size:12px">${r.mapsUrl
-      ?`<a href="${r.mapsUrl}" target="_blank" style="color:var(--acc2);text-decoration:none;white-space:nowrap">📍 ${(r.locLabel||'').split(',')[0]||'ดูแผนที่'}</a>`
+      ?`<a href="${r.mapsUrl}" target="_blank" style="color:var(--acc2);text-decoration:none;white-space:nowrap">📍 ${String(r.locLabel||'').split(',')[0]||'ดูแผนที่'}</a>`
       :`<span style="color:var(--t3);font-size:11px">${r.locLabel||'—'}</span>`}</td>
   </tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--t3)">ยังไม่มีข้อมูล</td></tr>';
 
@@ -1507,8 +1586,9 @@ function renderDash(){
     </tr>`).join('')
     :'<tr><td colspan="7" style="text-align:center;color:var(--t3);padding:12px">ยังไม่มีข้อมูล</td></tr>';
 
-  // Focus hosp table (ข้อ 3)
-  renderFocusHospTable(recs);
+  // Focus hosp table — ใช้ RECS ทั้งหมด ไม่ filter period
+  // เพราะอยากเห็นว่าเข้าพบ รพ.โฟกัสไปแล้วกี่แห่งทั้งหมด
+  renderFocusHospTable(RECS);
 }
 
 function exportCSV(){
