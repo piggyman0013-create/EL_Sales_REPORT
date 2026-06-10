@@ -517,7 +517,7 @@ async function loadConfig(){
 }
 
 // ─── APP VERSION — เปลี่ยนทุกครั้งที่ Deploy ใหม่ ───────────
-const APP_VERSION = '2026-05-20-v1';
+const APP_VERSION = '2026.05.22';
 const VER_KEY = 'el_app_ver';
 const FORCE_LOGOUT_KEY = 'el_force_logout';
 const LNK='el_ln',UK='el_users',SK='el_sess',DK='el_draft',AK='el_audit';
@@ -733,22 +733,6 @@ const RT={
 let curP='',curPer='monthly',MD=null,RECS=[],CTS=[];
 
 // INIT
-// ─── APP VERSION ───────────────────────────────────────────
-const APP_VERSION = '2026.05.20';
-
-function checkVersion(){
-  const stored = localStorage.getItem('el_ver');
-  if(stored && stored !== APP_VERSION){
-    // version ใหม่กว่า — แจ้ง user
-    localStorage.setItem('el_ver', APP_VERSION);
-    if(confirm('🆕 มีการอัปเดตระบบใหม่!\nกด OK เพื่อโหลดเวอร์ชันล่าสุด')){
-      window.location.reload(true); // force reload จาก server ไม่ใช่ cache
-    }
-  } else {
-    localStorage.setItem('el_ver', APP_VERSION);
-  }
-}
-
 function initApp(){
   checkVersion();
   document.getElementById('app').classList.add('on');
