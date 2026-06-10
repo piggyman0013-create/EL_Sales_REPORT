@@ -776,13 +776,12 @@ async function loadMaster(){
   try{
     const r = await api('getMasterData');
     if(!r.ok) throw new Error(r.error);
-    // ถ้า GAS ส่ง depts มาครบกว่า embedded — ใช้ GAS
-    if((r.depts||[]).length >= (MD?.depts||[]).length){
-      MD = r;
-      pop();
-    }
+    // ใช้ GAS เสมอถ้าโหลดสำเร็จ (ข้อมูลสดกว่า embedded)
+    MD = r;
+    pop();
+    // โหลด draft ใหม่อีกครั้งหลัง GAS sync เพื่อให้ dropdown ผู้แทน/รพ. ครบ
+    setTimeout(loadDraft, 300);
   } catch(e){
-    // GAS ผิดพลาด — ใช้ embedded ต่อ (ไม่แสดง error)
     console.warn('GAS sync failed, using embedded data:', e.message);
   }
 }
