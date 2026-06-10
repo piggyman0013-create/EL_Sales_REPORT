@@ -488,7 +488,33 @@ tr:hover td{background:var(--s2);color:var(--t1)}
 
 <script>
 // CONFIG
-let GAS=localStorage.getItem('el_gas')||'https://script.google.com/macros/s/AKfycbzQdoNahqkWidOD42zm3CDyyB6BTBhblk8XTgKE05YNtQfeTzkfOQZtyxRnGzCFOZ-FfA/exec';
+// ─── CONFIG — ดึง GAS URL จาก config.json อัตโนมัติ ───────
+const CONFIG_URL = 'https://raw.githubusercontent.com/piggyman0013-create/EL_Sales_REPORT/main/config.json';
+let GAS = localStorage.getItem('el_gas') || '';
+
+async function loadConfig(){
+  try{
+    const r = await fetch(CONFIG_URL + '?t=' + Date.now()); // cache bust
+    const cfg = await r.json();
+    if(cfg.gasUrl){
+      GAS = cfg.gasUrl;
+      localStorage.setItem('el_gas', cfg.gasUrl); // อัปเดต localStorage เสมอ
+    }
+    if(cfg.version && cfg.version !== APP_VERSION){
+      // version ใหม่ — reload
+      localStorage.setItem('el_ver', cfg.version);
+      if(confirm('🆕 มีการอัปเดตระบบใหม่!\nกด OK เพื่อโหลดเวอร์ชันล่าสุด')){
+        window.location.reload(true);
+      }
+    }
+  }catch(e){
+    // ถ้าดึง config ไม่ได้ — ใช้ค่าเดิมใน localStorage
+    console.warn('Config load failed, using cached GAS URL');
+    if(!GAS){
+      GAS = 'https://script.google.com/macros/s/AKfycbzQdoNahqkWidOD42zm3CDyyB6BTBhblk8XTgKE05YNtQfeTzkfOQZtyxRnGzCFOZ-FfA/exec';
+    }
+  }
+}
 
 // ─── APP VERSION — เปลี่ยนทุกครั้งที่ Deploy ใหม่ ───────────
 const APP_VERSION = '2026-05-20-v1';
@@ -1819,11 +1845,14 @@ function forceLogoutAll(){
   toast('✓ ทุกคนจะถูก Logout ครั้งถัดไปที่เปิดแอป');
 }
 
-// Boot
-if(checkVersionAndForceLogout() && chkS()){
-  document.getElementById('lw').style.display='none';
-  initApp();
-}
+// Boot — โหลด config ก่อนเสมอ แล้วค่อย init
+(async function boot(){
+  await loadConfig(); // ดึง GAS URL ล่าสุดจาก config.json
+  if(checkVersionAndForceLogout() && chkS()){
+    document.getElementById('lw').style.display='none';
+    initApp();
+  }
+})();
 document.getElementById('lu').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('lp').focus();});
 
 
