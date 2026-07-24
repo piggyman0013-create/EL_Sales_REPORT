@@ -59,6 +59,10 @@ main{padding:72px 0 40px}
 /* CARD */
 .cd{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:20px;margin-bottom:14px;transition:background .2s}
 .ch{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;font-family:var(--mono)}
+.step-h{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+.step-n{width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'Sarabun',sans-serif;flex-shrink:0}
+.step-t{font-size:15px;font-weight:600;color:var(--t1);text-transform:none;letter-spacing:0;font-family:'Sarabun',sans-serif}
+.step-sub{font-size:12px;color:var(--t3);margin:4px 0 14px 34px}
 
 /* FORM */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
@@ -187,7 +191,8 @@ tr:hover td{background:var(--s2);color:var(--t1)}
   <div class="di" id="di"></div>
 
   <div class="cd">
-    <div class="ch">ข้อมูลทั่วไป</div>
+    <div class="step-h"><div class="step-n">1</div><div class="step-t">ข้อมูลทั่วไป</div></div>
+    <div class="step-sub">เลือกเขตและผู้แทนที่เข้าพบวันนี้</div>
     <div class="g2">
       <div><label class="fl">วันที่</label><input class="fi" type="date" id="fd"></div>
       <div><label class="fl">เขต<span class="r">*</span></label>
@@ -200,7 +205,8 @@ tr:hover td{background:var(--s2);color:var(--t1)}
   </div>
 
   <div class="cd">
-    <div class="ch">ข้อมูลโรงพยาบาล</div>
+    <div class="step-h"><div class="step-n">2</div><div class="step-t">ข้อมูลโรงพยาบาล</div></div>
+    <div class="step-sub">เลือกโรงพยาบาลที่เข้าพบ หรือเพิ่มโรงพยาบาลใหม่ถ้ายังไม่มีในระบบ</div>
     <div class="g2">
       <div class="gf"><label class="fl">ชื่อโรงพยาบาล<span class="r">*</span></label>
         <select class="fs" id="fh" onchange="onH();sd()"><option value="">-- เลือกโรงพยาบาล --</option></select>
@@ -221,7 +227,8 @@ tr:hover td{background:var(--s2);color:var(--t1)}
   </div>
 
   <div class="cd">
-    <div class="ch">รายงานการปฏิบัติงาน</div>
+    <div class="step-h"><div class="step-n">3</div><div class="step-t">รายงานการปฏิบัติงาน</div></div>
+    <div class="step-sub">ผู้ติดต่อ รายละเอียดการเข้าพบ และโอกาสทางการขาย (ถ้ามี)</div>
     <div class="fsc">ผู้ติดต่อ</div>
     <div class="g2" style="margin-bottom:14px">
       <div><label class="fl">แผนก<span class="r">*</span></label>
@@ -273,9 +280,10 @@ tr:hover td{background:var(--s2);color:var(--t1)}
       <div><label class="fl">แผนก Demo</label>
         <select class="fs" id="fdz" onchange="sd()"><option value="">-- เลือก --</option></select></div>
       <div><label class="fl">สินค้า Demo</label>
-        <select class="fs" id="fdpd" onchange="sd()"><option value="">-- เลือก --</option></select></div>
-      <div class="gf"><label class="fl">ผลลัพธ์หลัง Demo</label>
-        <textarea class="ft" id="fdr" style="min-height:60px;width:100%" onchange="sd()"></textarea></div>
+        <select class="fs" id="fdpd" onchange="sd();toggleDemoResultReq()"><option value="">-- เลือก --</option></select></div>
+      <div class="gf"><label class="fl">ผลลัพธ์หลัง Demo<span class="r" id="fdr-star" style="display:none">*</span></label>
+        <textarea class="ft" id="fdr" style="min-height:60px;width:100%" onchange="sd();toggleDemoResultReq()"></textarea>
+        <span class="fe" id="edr">กรุณากรอกผลลัพธ์หลัง Demo เนื่องจากมีการเลือกสินค้า Demo</span></div>
     </div>
   </div>
 
@@ -1204,6 +1212,7 @@ function loadDraft(){
     ind.textContent='⚡ โหลด Draft ที่บันทึกเมื่อ '+label;
     ind.classList.add('on');
   }
+  setTimeout(toggleDemoResultReq, 350);
 }
 
 function clearDraft(){localStorage.removeItem(DK);const i=document.getElementById('di');if(i)i.classList.remove('on');const s=document.getElementById('svd');if(s)s.textContent='';}
@@ -1211,7 +1220,33 @@ function clearDraft(){localStorage.removeItem(DK);const i=document.getElementByI
 function chkDraftBanner(){const raw=localStorage.getItem(DK);if(!raw)return;const{ts}=JSON.parse(raw);if(new Date(ts).toDateString()!==new Date().toDateString())return;const b=document.getElementById('nb');const t=document.getElementById('nbt');if(b&&t){t.textContent='มี Draft รายงานที่บันทึกไว้ กดกรอกรายงานเพื่อโหลดต่อ';b.classList.remove('h');}}
 
 // VALIDATE & SUBMIT
-function valid(){const fs=[{id:'fz',eid:'ez'},{id:'frp',eid:'er'},{id:'fh',eid:'eh'},{id:'fdp',eid:'ed'}];let ok=true;fs.forEach(({id,eid})=>{const el=document.getElementById(id);const err=document.getElementById(eid);if(!el.value){el.classList.add('er');err?.classList.add('on');ok=false;}else{el.classList.remove('er');err?.classList.remove('on');}});return ok;}
+function escQ(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function toggleDemoResultReq(){
+  const demoSel=document.getElementById('fdpd');
+  const star=document.getElementById('fdr-star');
+  const hasDemo = !!getProductVal('fdpd');
+  if(star) star.style.display = hasDemo ? '' : 'none';
+  // ถ้าเลิกเลือก demo แล้ว ให้เคลียร์ error ของ fdr ทันที
+  if(!hasDemo){
+    document.getElementById('fdr')?.classList.remove('er');
+    document.getElementById('edr')?.classList.remove('on');
+  }
+}
+function valid(){
+  const fs=[{id:'fz',eid:'ez'},{id:'frp',eid:'er'},{id:'fh',eid:'eh'},{id:'fdp',eid:'ed'}];
+  let ok=true;
+  fs.forEach(({id,eid})=>{const el=document.getElementById(id);const err=document.getElementById(eid);if(!el.value){el.classList.add('er');err?.classList.add('on');ok=false;}else{el.classList.remove('er');err?.classList.remove('on');}});
+  // บังคับกรอกผลลัพธ์ Demo ถ้าเลือกสินค้า Demo ไว้
+  const hasDemo = !!getProductVal('fdpd');
+  const drEl = document.getElementById('fdr');
+  const drErr = document.getElementById('edr');
+  if(hasDemo && !drEl.value.trim()){
+    drEl.classList.add('er'); drErr?.classList.add('on'); ok=false;
+  } else {
+    drEl.classList.remove('er'); drErr?.classList.remove('on');
+  }
+  return ok;
+}
 
 async function submitForm(){
   if(!valid()){toast('กรุณากรอกข้อมูลที่จำเป็น (*)',true);return;}
@@ -1332,6 +1367,7 @@ function resetForm(){
   document.querySelectorAll('.er').forEach(e=>e.classList.remove('er'));
   _gpsCache=null;
   setGpsUI('idle','ยังไม่ได้ดึงตำแหน่ง','ระบบจะขอ GPS อัตโนมัติเมื่อกดบันทึก');
+  toggleDemoResultReq();
 }
 
 // GPS STATE — เก็บไว้ใช้ตอน submit
@@ -1615,8 +1651,10 @@ function renderFocusHospTable(allRecs){
           const col = inPeriod ? 'var(--gn)' : inAll ? 'var(--am)' : 'var(--t3)';
           const bg  = inPeriod ? 'rgba(16,185,129,.08)' : inAll ? 'rgba(245,158,11,.06)' : 'transparent';
           const pre = inPeriod ? '✓ ' : inAll ? '◷ ' : '';
-          const tip = inAll && !inPeriod ? `title="เคยเข้าพบแล้ว แต่ไม่ใช่${periodLabel}"` : '';
-          return `<span ${tip} style="font-size:12px;padding:3px 10px;border-radius:6px;border:1px solid ${bdr};color:${col};background:${bg};cursor:default">${pre}${h}</span>`;
+          const tip = inAll && !inPeriod ? `title="เคยเข้าพบแล้ว แต่ไม่ใช่${periodLabel} — คลิกดูประวัติ"` : (inAll ? 'title="คลิกดูประวัติเข้าพบ"' : '');
+          const click = inAll ? `onclick="showDetailModal('hospDetail','${escQ(h)}')"` : '';
+          const cur = inAll ? 'cursor:pointer' : 'cursor:default';
+          return `<span ${tip} ${click} style="font-size:12px;padding:3px 10px;border-radius:6px;border:1px solid ${bdr};color:${col};background:${bg};${cur}">${pre}${h}</span>`;
         }).join('')}
       </div>
       <div style="font-size:11px;color:var(--t3);margin-top:6px;display:flex;gap:14px">
@@ -1711,7 +1749,7 @@ function showDetailModal(type, extra){
     recs.forEach(r=>{ if(!hospMap[r.hospital])hospMap[r.hospital]={count:0,zone:r.zone,isMain:MD?.mainHospNames?.[r.zone]?.includes(r.hospital)}; hospMap[r.hospital].count++; });
     const sorted=Object.entries(hospMap).sort((a,b)=>b[1].count-a[1].count);
     body.innerHTML=`<div class="tw"><table><thead><tr><th>โรงพยาบาล</th><th>เขต</th><th>จำนวนครั้ง</th><th>ประเภท</th></tr></thead><tbody>
-      ${sorted.map(([h,d])=>`<tr><td style="font-weight:500">${h}</td><td><span class="tg tb2">${d.zone||'—'}</span></td><td style="font-family:var(--mono);text-align:center">${d.count}</td><td>${d.isMain?'<span class="tg tg2">⭐ โฟกัส</span>':'<span style="color:var(--t3);font-size:12px">ทั่วไป</span>'}</td></tr>`).join('')}
+      ${sorted.map(([h,d])=>`<tr style="cursor:pointer" onclick="showDetailModal('hospDetail','${escQ(h)}')"><td style="font-weight:500;color:var(--acc)">${h}</td><td><span class="tg tb2">${d.zone||'—'}</span></td><td style="font-family:var(--mono);text-align:center">${d.count}</td><td>${d.isMain?'<span class="tg tg2">⭐ โฟกัส</span>':'<span style="color:var(--t3);font-size:12px">ทั่วไป</span>'}</td></tr>`).join('')}
     </tbody></table></div>`;
   }
   else if(type==='opp'){
@@ -1720,7 +1758,7 @@ function showDetailModal(type, extra){
     const total=oppRecs.reduce((s,r)=>s+(parseFloat(r.newOppPrice)||0),0);
     body.innerHTML=`<div style="margin-bottom:12px;font-size:13px">รวม <strong>${oppRecs.length}</strong> รายการ มูลค่ารวม <strong style="color:var(--gn)">${total.toLocaleString()} บาท</strong></div>
     <div class="tw"><table><thead><tr><th>โรงพยาบาล</th><th>สินค้า</th><th>ราคา</th><th>งบ</th><th>เขต</th><th>ผู้แทน</th><th>วันที่</th></tr></thead><tbody>
-      ${oppRecs.map(r=>`<tr><td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.hospital||'—'}</td><td><span class="tg tg2">${r.newOppProduct}</span></td><td style="font-family:var(--mono);text-align:right">${r.newOppPrice?Number(r.newOppPrice).toLocaleString()+' ฿':'—'}</td><td>${r.budgetType?`<span class="tg tp2">${r.budgetType}</span>`:'—'}</td><td><span class="tg tb2">${r.zone||'—'}</span></td><td>${r.rep||'—'}</td><td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td></tr>`).join('')}
+      ${oppRecs.map(r=>`<tr><td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--acc)" onclick="showDetailModal('hospDetail','${escQ(r.hospital)}')">${r.hospital||'—'}</td><td><span class="tg tg2">${r.newOppProduct}</span></td><td style="font-family:var(--mono);text-align:right">${r.newOppPrice?Number(r.newOppPrice).toLocaleString()+' ฿':'—'}</td><td>${r.budgetType?`<span class="tg tp2">${r.budgetType}</span>`:'—'}</td><td><span class="tg tb2">${r.zone||'—'}</span></td><td>${r.rep||'—'}</td><td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td></tr>`).join('')}
     </tbody></table></div>`;
   }
   else if(type==='demo'){
@@ -1728,7 +1766,7 @@ function showDetailModal(type, extra){
     const demoRecs=recs.filter(r=>r.demoProduct);
     body.innerHTML=`<div style="margin-bottom:12px;font-size:13px">รวม <strong>${demoRecs.length}</strong> ครั้ง</div>
     <div class="tw"><table><thead><tr><th>โรงพยาบาล</th><th>แผนก</th><th>สินค้า</th><th>เขต</th><th>ผู้แทน</th><th>วันที่</th><th>ผลลัพธ์</th></tr></thead><tbody>
-      ${demoRecs.map(r=>`<tr><td style="font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.hospital||'—'}</td><td>${r.demoZone||r.dept||'—'}</td><td><span class="tg ta2">${r.demoProduct}</span></td><td><span class="tg tb2">${r.zone||'—'}</span></td><td>${r.rep||'—'}</td><td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td><td style="color:var(--gn);font-size:12px">${r.demoResult||'—'}</td></tr>`).join('')}
+      ${demoRecs.map(r=>`<tr><td style="font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--acc)" onclick="showDetailModal('hospDetail','${escQ(r.hospital)}')">${r.hospital||'—'}</td><td>${r.demoZone||r.dept||'—'}</td><td><span class="tg ta2">${r.demoProduct}</span></td><td><span class="tg tb2">${r.zone||'—'}</span></td><td>${r.rep||'—'}</td><td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td><td style="color:var(--gn);font-size:12px">${r.demoResult||'—'}</td></tr>`).join('')}
     </tbody></table></div>`;
   }
   else if(type==='rep'){
@@ -1742,7 +1780,21 @@ function showDetailModal(type, extra){
       <span>มูลค่า <strong style="color:var(--pu)">${val?(val/1e6).toFixed(1)+'M':'—'}</strong></span>
     </div>
     <div class="tw"><table><thead><tr><th>วันที่</th><th>โรงพยาบาล</th><th>แผนก</th><th>ผู้ติดต่อ</th><th>New Opp</th><th>Demo</th><th>รายละเอียด</th></tr></thead><tbody>
-      ${repRecs.map(r=>`<tr><td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td><td style="font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.hospital||'—'}</td><td>${r.dept||'—'}</td><td style="font-size:12px">${r.contactName||'—'}</td><td>${r.newOppProduct?`<span class="tg tg2">${r.newOppProduct}</span><br><span style="font-family:var(--mono);font-size:11px">${r.newOppPrice?Number(r.newOppPrice).toLocaleString()+' ฿':''}</span>`:'—'}</td><td>${r.demoProduct?`<span class="tg ta2">${r.demoProduct}</span>`:'—'}</td><td style="font-size:12px;color:var(--t2);max-width:180px">${r.detail||'—'}</td></tr>`).join('')}
+      ${repRecs.map(r=>`<tr><td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td><td style="font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--acc)" onclick="showDetailModal('hospDetail','${escQ(r.hospital)}')">${r.hospital||'—'}</td><td>${r.dept||'—'}</td><td style="font-size:12px">${r.contactName||'—'}</td><td>${r.newOppProduct?`<span class="tg tg2">${r.newOppProduct}</span><br><span style="font-family:var(--mono);font-size:11px">${r.newOppPrice?Number(r.newOppPrice).toLocaleString()+' ฿':''}</span>`:'—'}</td><td>${r.demoProduct?`<span class="tg ta2">${r.demoProduct}</span>`:'—'}</td><td style="font-size:12px;color:var(--t2);max-width:180px">${r.detail||'—'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  }
+  else if(type==='hospDetail'){
+    title.textContent='ประวัติเข้าพบ — '+extra;
+    const hRecs=recs.filter(r=>r.hospital===extra);
+    const val=hRecs.reduce((s,r)=>s+(parseFloat(r.newOppPrice)||0),0);
+    body.innerHTML=`<div style="display:flex;gap:16px;margin-bottom:12px;font-size:13px;flex-wrap:wrap">
+      <span>เข้าพบ <strong>${hRecs.length}</strong> ครั้ง</span>
+      <span>New Opp <strong style="color:var(--gn)">${hRecs.filter(r=>r.newOppProduct).length}</strong></span>
+      <span>Demo <strong style="color:var(--am)">${hRecs.filter(r=>r.demoProduct).length}</strong></span>
+      <span>มูลค่ารวม <strong style="color:var(--pu)">${val?val.toLocaleString()+' ฿':'—'}</strong></span>
+    </div>
+    <div class="tw"><table><thead><tr><th>วันที่</th><th>ผู้แทน</th><th>แผนก</th><th>ผู้ติดต่อ</th><th>New Opp</th><th>Demo</th><th>ผลลัพธ์ Demo</th><th>รายละเอียด</th></tr></thead><tbody>
+      ${hRecs.slice().reverse().map(r=>`<tr><td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td><td><span class="tg tb2">${r.rep||'—'}</span></td><td>${r.dept||'—'}</td><td style="font-size:12px">${r.contactName||'—'}</td><td>${r.newOppProduct?`<span class="tg tg2">${r.newOppProduct}</span><br><span style="font-family:var(--mono);font-size:11px">${r.newOppPrice?Number(r.newOppPrice).toLocaleString()+' ฿':''}</span>`:'—'}</td><td>${r.demoProduct?`<span class="tg ta2">${r.demoProduct}</span>`:'—'}</td><td style="font-size:12px;color:var(--gn)">${r.demoResult||'—'}</td><td style="font-size:12px;color:var(--t2);max-width:180px">${r.detail||'—'}</td></tr>`).join('')}
     </tbody></table></div>`;
   }
   modal.style.display='flex';
@@ -1860,7 +1912,7 @@ function renderDash(){
   const ra=Object.entries(dc).sort((a,b)=>b[1]-a[1]);const mx=ra[0]?.[1]||1;
   const bc=['var(--acc)','var(--acc2)','var(--gn)','var(--pu)','var(--am)'];
   document.getElementById('drk').innerHTML=ra.length?ra.slice(0,5).map(([p,c],i)=>`<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--b1)"><div style="font-family:var(--mono);font-size:12px;color:var(--t3);width:16px">${i+1}</div><div style="flex:1;font-size:13px">${p}</div><div style="width:80px;height:14px;background:var(--s3);border-radius:4px;overflow:hidden"><div style="height:100%;width:${Math.round(c/mx*100)}%;background:${bc[i]}"></div></div><div style="font-family:var(--mono);font-size:12px;color:var(--t1);min-width:18px;text-align:right">${c}</div></div>`).join(''):'<div style="color:var(--t3);font-size:13px;padding:10px 0">ยังไม่มีข้อมูล</div>';
-  document.getElementById('ddb').innerHTML=dR.slice(-20).reverse().map(r=>`<tr><td style="font-weight:500;font-size:13px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.hospital||'—'}</td><td>${r.demoZone||r.dept||'—'}</td><td><span class="tg tb2">${r.demoProduct||'—'}</span></td><td><span class="tg tb2">${r.zone||'—'}</span></td><td>${r.rep||'—'}</td><td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td><td style="color:var(--gn);font-size:12px">${r.demoResult||'—'}</td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--t3)">ยังไม่มีข้อมูล</td></tr>';
+  document.getElementById('ddb').innerHTML=dR.slice(-20).reverse().map(r=>`<tr><td style="font-weight:500;font-size:13px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--acc)" onclick="showDetailModal('hospDetail','${escQ(r.hospital)}')" title="คลิกดูประวัติ รพ. นี้">${r.hospital||'—'}</td><td>${r.demoZone||r.dept||'—'}</td><td><span class="tg tb2">${r.demoProduct||'—'}</span></td><td><span class="tg tb2">${r.zone||'—'}</span></td><td>${r.rep||'—'}</td><td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td><td style="color:var(--gn);font-size:12px">${r.demoResult||'—'}</td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--t3)">ยังไม่มีข้อมูล</td></tr>';
   const rm={};recs.forEach(r=>{if(!r.rep)return;if(!rm[r.rep])rm[r.rep]={name:r.rep,zone:r.zone,v:new Set(),o:0,d:0,val:0};rm[r.rep].v.add(r.hospital);if(r.newOppProduct){rm[r.rep].o++;rm[r.rep].val+=parseFloat(r.newOppPrice)||0;}if(r.demoProduct)rm[r.rep].d++;});
   const ac=['var(--acc)','var(--gn)','var(--am)','var(--pu)','var(--acc2)','var(--rd)'];
   document.getElementById('drl').innerHTML=Object.values(rm).sort((a,b)=>b.o-a.o).map((r,i)=>`
@@ -1877,7 +1929,7 @@ function renderDash(){
     <td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td>
     <td><span class="tg tb2">${r.zone||'—'}</span></td>
     <td>${r.rep||'—'}</td>
-    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.hospital||'—'}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--acc)" onclick="showDetailModal('hospDetail','${escQ(r.hospital)}')" title="คลิกดูประวัติ รพ. นี้">${r.hospital||'—'}</td>
     <td>${r.newOppProduct?`<span class="tg tg2">${r.newOppProduct}</span>`:'—'}</td>
     <td>${r.demoProduct?`<span class="tg ta2">${r.demoProduct}</span>`:'—'}</td>
     <td style="font-size:12px">${r.mapsUrl
@@ -1889,7 +1941,7 @@ function renderDash(){
   const oppDetail=recs.filter(r=>r.newOppProduct);
   document.getElementById('opp-detail-body').innerHTML=oppDetail.length
     ?oppDetail.slice().reverse().map(r=>`<tr>
-      <td style="font-weight:500;font-size:13px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.hospital||'—'}</td>
+      <td style="font-weight:500;font-size:13px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--acc)" onclick="showDetailModal('hospDetail','${escQ(r.hospital)}')" title="คลิกดูประวัติ รพ. นี้">${r.hospital||'—'}</td>
       <td><span class="tg tg2">${r.newOppProduct||'—'}</span></td>
       <td style="font-family:var(--mono);font-size:12px;text-align:right">${r.newOppPrice?Number(r.newOppPrice).toLocaleString()+' ฿':'—'}</td>
       <td>${r.budgetType?`<span class="tg tp2">${r.budgetType}</span>`:'—'}</td>
