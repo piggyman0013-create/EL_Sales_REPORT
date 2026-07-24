@@ -737,6 +737,14 @@ function doLogin(){
 }
 
 function onLoginSuccess(user){
+  // กันพัง — ถ้า backend ตอบ ok:true แต่ไม่มี user แนบมา (กรณี deploy ไม่ตรงรุ่น ฯลฯ)
+  if(!user || !user.u){
+    const err=document.getElementById('le');
+    if(err){err.textContent='เข้าสู่ระบบไม่สำเร็จ: ข้อมูลผู้ใช้ไม่ถูกต้อง กรุณาลองใหม่หรือติดต่อ Admin';err.classList.add('on');}
+    const btn=document.getElementById('lbtn');
+    if(btn){btn.disabled=false;btn.textContent='เข้าสู่ระบบ';}
+    return;
+  }
   // ป้องกันไว้ก่อน — ตัด password ออกจาก object ก่อนเก็บลง localStorage เสมอ
   // เผื่อ backend (Code.gs) ลืมตัด field password ออกตอนตอบกลับ
   if(user){delete user.p;delete user.password;}
