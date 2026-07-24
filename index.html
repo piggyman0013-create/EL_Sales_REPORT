@@ -16,7 +16,7 @@
 :root,[data-theme=dark]{--bg:#080f1e;--s1:#0d1726;--s2:#131f33;--s3:#1a2840;--b1:#1e3050;--b2:#2a4268;--acc:#3b82f6;--acc2:#06b6d4;--gn:#10b981;--am:#f59e0b;--rd:#ef4444;--pu:#8b5cf6;--t1:#dde6f0;--t2:#8fa8c0;--t3:#4a6480;--sh:rgba(0,0,0,.4);--mono:'IBM Plex Mono',monospace}
 [data-theme=light]{--bg:#f0f4f8;--s1:#fff;--s2:#f8fafc;--s3:#edf2f7;--b1:#cbd5e1;--b2:#94a3b8;--acc:#2563eb;--acc2:#0891b2;--gn:#059669;--am:#d97706;--rd:#dc2626;--pu:#7c3aed;--t1:#1e293b;--t2:#475569;--t3:#94a3b8;--sh:rgba(0,0,0,.07)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--t1);font-family:'Sarabun',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;transition:background .2s,color .2s}
+body{background:var(--bg);color:var(--t1);font-family:'Sarabun',sans-serif;font-size:16px;line-height:1.65;min-height:100vh;transition:background .2s,color .2s}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--s2)}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
 
 /* LOGIN */
@@ -58,7 +58,10 @@ main{padding:72px 0 40px}
 
 /* CARD */
 .cd{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:20px;margin-bottom:14px;transition:background .2s}
-.ch{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;font-family:var(--mono)}
+.ch{font-size:15px;font-weight:700;color:var(--t1);margin-bottom:14px;font-family:'Sarabun',sans-serif}
+.ch-click{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ch-click:hover .ch-arrow{transform:translateX(3px)}
+.ch-arrow{font-size:13px;color:var(--acc);font-weight:500;transition:transform .15s;white-space:nowrap;font-family:'Sarabun',sans-serif;text-transform:none;letter-spacing:0}
 .step-h{display:flex;align-items:center;gap:10px;margin-bottom:2px}
 .step-n{width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'Sarabun',sans-serif;flex-shrink:0}
 .step-t{font-size:15px;font-weight:600;color:var(--t1);text-transform:none;letter-spacing:0;font-family:'Sarabun',sans-serif}
@@ -89,18 +92,41 @@ main{padding:72px 0 40px}
 
 /* TABLE */
 .tw{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{background:var(--s2);color:var(--t2);font-weight:500;padding:9px 12px;text-align:left;border-bottom:1px solid var(--b1);font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono)}
-td{padding:9px 12px;border-bottom:1px solid var(--b1);color:var(--t2)}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th{background:var(--s2);color:var(--t2);font-weight:600;padding:11px 14px;text-align:left;border-bottom:1px solid var(--b1);font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono)}
+td{padding:11px 14px;border-bottom:1px solid var(--b1);color:var(--t2)}
 tr:hover td{background:var(--s2);color:var(--t1)}
 
 /* KPI */
 .kr{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .kc{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden;transition:background .2s}
+.dl-row{display:flex;align-items:center;justify-content:space-between;padding:16px 4px;border-bottom:1px solid var(--b1);gap:12px}
+.dl-row.clk{cursor:pointer;transition:background .15s}
+.dl-row.clk:hover{background:var(--s2)}
+.dl-label{font-size:15px;color:var(--t1)}
+.dl-sub{font-size:12.5px;color:var(--t3);margin-top:3px}
+.dl-val{font-size:24px;font-weight:700;font-family:var(--mono);white-space:nowrap}
+.dl-chev{font-size:20px;color:var(--t3);flex-shrink:0}
+.itiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+.itile{display:flex;align-items:center;gap:12px}
+.itile-badge{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:19px}
+.itile-val{font-size:22px;font-weight:700;font-family:var(--mono);line-height:1.2}
+.itile-lbl{font-size:12.5px;color:var(--t3)}
+.acc-panel{border:1px solid var(--b1);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.acc{border-bottom:1px solid var(--b1)}
+.acc:last-child{border-bottom:none}
+.acc>summary{font-size:15px;font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;color:var(--t1);transition:background .15s}
+.acc>summary:hover{background:var(--s2)}
+.acc[open]>summary{background:var(--s2)}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary .acc-ico{margin-right:10px;font-size:16px;color:var(--t3)}
+.acc>summary .acc-chev{font-size:16px;color:var(--t3);transition:transform .15s}
+.acc[open]>summary .acc-chev{transform:rotate(90deg)}
+.acc-body{padding:4px 16px 20px 42px}
 .kc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
 .kb::after{background:var(--acc)}.kg::after{background:var(--gn)}.ka::after{background:var(--am)}.kp::after{background:var(--pu)}
-.kl{font-size:11px;color:var(--t3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
-.kv{font-size:28px;font-weight:700;font-family:var(--mono);line-height:1}.ksu{font-size:12px;color:var(--t3);margin-top:4px}
+.kl{font-size:12px;color:var(--t3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.kv{font-size:32px;font-weight:700;font-family:var(--mono);line-height:1}.ksu{font-size:13px;color:var(--t3);margin-top:4px}
 
 /* PROGRESS */
 .pr{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--b1)}.pr:last-child{border-bottom:none}
@@ -113,7 +139,7 @@ tr:hover td{background:var(--s2);color:var(--t1)}
 
 /* MISC */
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.sp{font-size:11px;font-weight:600;color:var(--t3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;padding-bottom:8px;border-bottom:1px solid var(--b1);margin-bottom:12px}
+.sp{font-size:16px;font-weight:700;color:var(--t1);font-family:'Sarabun',sans-serif;padding-bottom:10px;border-bottom:2px solid var(--acc);margin-bottom:14px;margin-top:8px}
 .fb{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
 .pts{display:flex;gap:4px;margin-bottom:12px}
 .pt{padding:5px 14px;border-radius:6px;border:1px solid var(--b1);background:none;color:var(--t2);cursor:pointer;font-size:12px;font-family:'Sarabun',sans-serif;transition:all .15s}
@@ -340,74 +366,87 @@ tr:hover td{background:var(--s2);color:var(--t1)}
           <button class="pt" onclick="setPer('custom',this)">กำหนดเอง</button>
         </div>
       </div>
-      <div style="display:flex;gap:6px;align-items:flex-end">
-        <button class="bn bp bsm" onclick="loadDash()" style="flex:1">↻ โหลด</button>
+      <div style="display:flex;gap:8px;align-items:flex-end;justify-content:flex-end">
+        <button class="bn bp bsm" onclick="loadDash()">🔍 ค้นหา</button>
         <button class="bn bs bsm" onclick="resetDashFilter()" title="ล้าง filter">✕</button>
       </div>
     </div>
     <div id="dash-filter-summary" style="margin-top:10px;font-size:12px;color:var(--t3);font-family:var(--mono)"></div>
   </div>
 
-  <div class="kr">
-    <div class="kc kb" style="cursor:pointer" onclick="showDetailModal('hosp')"><div class="kl">โรงพยาบาลที่เข้าพบ</div><div class="kv" id="kh" style="color:var(--acc)">—</div><div class="ksu">คลิกดูรายละเอียด</div></div>
-    <div class="kc kg" style="cursor:pointer" onclick="showDetailModal('opp')"><div class="kl">New Opportunity</div><div class="kv" id="ko" style="color:var(--gn)">—</div><div class="ksu">คลิกดูรายละเอียด</div></div>
-    <div class="kc ka" style="cursor:pointer" onclick="showDetailModal('demo')"><div class="kl">Demo ทั้งหมด</div><div class="kv" id="kd" style="color:var(--am)">—</div><div class="ksu">คลิกดูรายละเอียด</div></div>
-    <div class="kc kp" style="cursor:pointer" onclick="showDetailModal('opp')"><div class="kl">มูลค่า New Opp.</div><div class="kv" id="kv" style="color:var(--pu)">—</div><div class="ksu">คลิกดูรายละเอียด</div></div>
+  <div class="itiles">
+    <div class="itile clk" style="cursor:pointer" onclick="showDetailModal('hosp')"><div class="itile-badge" style="background:rgba(55,138,221,.14)">🏥</div><div><div class="itile-val" id="kh" style="color:var(--acc)">—</div><div class="itile-lbl">โรงพยาบาลที่เข้าพบ</div></div></div>
+    <div class="itile clk" style="cursor:pointer" onclick="showDetailModal('opp')"><div class="itile-badge" style="background:rgba(34,197,94,.14)">💡</div><div><div class="itile-val" id="ko" style="color:var(--gn)">—</div><div class="itile-lbl">New Opportunity</div></div></div>
+    <div class="itile clk" style="cursor:pointer" onclick="showDetailModal('demo')"><div class="itile-badge" style="background:rgba(245,158,11,.14)">🖥️</div><div><div class="itile-val" id="kd" style="color:var(--am)">—</div><div class="itile-lbl">Demo ทั้งหมด</div></div></div>
+    <div class="itile clk" style="cursor:pointer" onclick="showDetailModal('opp')"><div class="itile-badge" style="background:rgba(168,85,247,.14)">💰</div><div><div class="itile-val" id="kv" style="color:var(--pu)">—</div><div class="itile-lbl">มูลค่า New Opp.</div></div></div>
   </div>
 
-  <div class="sp">1. การเข้าพบลูกค้า</div>
-  <div class="r2">
-    <div class="cd"><div class="ch">1.1 สรุปการเข้าพบ</div><div id="dvt"></div></div>
-    <div class="cd"><div class="ch">1.2 New Opportunity</div><div id="dot2"></div></div>
-  </div>
-  <div class="sp">2. รายงาน Demo</div>
-  <div class="r2">
-    <div class="cd"><div class="ch">2.1 KPI Demo</div><div id="dkt"></div></div>
-    <div class="cd"><div class="ch">อันดับสินค้า Demo สูงสุด</div><div id="drk"></div></div>
-  </div>
-  <div class="cd" style="margin-bottom:14px">
-    <div class="ch">2.2 รายละเอียดการเข้า Demo</div>
-    <div class="tw"><table><thead><tr><th>โรงพยาบาล</th><th>แผนก</th><th>สินค้า</th><th>เขต</th><th>ผู้แทน</th><th>วันที่</th><th>ผลลัพธ์</th></tr></thead>
-    <tbody id="ddb"></tbody></table></div>
-  </div>
-  <div class="sp">3. รายละเอียด New Opportunity</div>
-  <div class="cd" style="margin-bottom:14px">
-    <div class="ch">รายการ New Opportunity ทั้งหมด</div>
-    <div class="tw">
-      <table><thead><tr>
-        <th>โรงพยาบาล</th><th>สินค้า</th><th>ราคา (บาท)</th>
-        <th>ประเภทงบ</th><th>เขต</th><th>ผู้แทน</th><th>วันที่</th>
-      </tr></thead>
-      <tbody id="opp-detail-body"></tbody></table>
+  <div class="acc-panel">
+  <details class="acc" open>
+    <summary><span><span class="acc-ico">📅</span>การเข้าพบลูกค้า</span><span class="acc-chev">›</span></summary>
+    <div class="acc-body">
+      <div class="r2">
+        <div><div class="ch" style="font-size:13px">สรุปการเข้าพบ</div><div id="dvt"></div></div>
+        <div><div class="ch" style="font-size:13px">New Opportunity</div><div id="dot2"></div></div>
+      </div>
     </div>
-  </div>
+  </details>
 
-  <div class="sp">4. โรงพยาบาลโฟกัสแต่ละเขต</div>
-  <div class="cd" style="margin-bottom:14px">
-    <div class="ch">สถานะการเข้าพบ รพ.โฟกัส</div>
-    <div id="focus-hosp-table"></div>
-  </div>
+  <details class="acc">
+    <summary><span><span class="acc-ico">🖥️</span>รายงาน Demo</span><span class="acc-chev">›</span></summary>
+    <div class="acc-body">
+      <div class="r2" style="margin-bottom:14px">
+        <div><div class="ch" style="font-size:13px">KPI Demo</div><div id="dkt"></div></div>
+        <div><div class="ch" style="font-size:13px">อันดับสินค้า Demo สูงสุด</div><div id="drk"></div></div>
+      </div>
+      <div class="dl-row clk" onclick="showDetailModal('demo')">
+        <div><div class="dl-label">รายละเอียดการเข้า Demo ทั้งหมด</div><div class="dl-sub"><strong id="demo-count-sum" style="color:var(--am)">—</strong> ครั้ง — คลิกดูตารางเต็ม</div></div>
+        <span class="dl-chev">›</span>
+      </div>
+      <div style="display:none"><table><tbody id="ddb"></tbody></table></div>
+    </div>
+  </details>
 
-  <div class="sp">5. สรุปรายผู้แทน</div>
-  <div class="cd" style="margin-bottom:14px"><div class="ch">ผลงานประจำเดือน — คลิกเพื่อดูรายละเอียด</div><div id="drl"></div></div>
+  <details class="acc">
+    <summary><span><span class="acc-ico">💡</span>รายละเอียด New Opportunity</span><span class="acc-chev">›</span></summary>
+    <div class="acc-body">
+      <div class="dl-row clk" onclick="showDetailModal('opp')">
+        <div><div class="dl-label">New Opportunity ทั้งหมด</div><div class="dl-sub"><strong id="opp-count-sum" style="color:var(--gn)">—</strong> รายการ — คลิกดูตารางเต็ม</div></div>
+        <span class="dl-chev">›</span>
+      </div>
+      <div style="display:none"><table><tbody id="opp-detail-body"></tbody></table></div>
+    </div>
+  </details>
 
-  <div class="cd">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div class="ch" style="margin:0">รายงานทั้งหมด</div>
-      <div style="display:flex;gap:6px">
+  <details class="acc">
+    <summary><span><span class="acc-ico">🏥</span>โรงพยาบาลโฟกัสแต่ละเขต</span><span class="acc-chev">›</span></summary>
+    <div class="acc-body"><div id="focus-hosp-table"></div></div>
+  </details>
+
+  <details class="acc">
+    <summary><span><span class="acc-ico">👥</span>สรุปรายผู้แทน — ผลงานประจำเดือน</span><span class="acc-chev">›</span></summary>
+    <div class="acc-body"><div id="drl"></div></div>
+  </details>
+
+  <details class="acc">
+    <summary><span><span class="acc-ico">📋</span>รายงานทั้งหมด</span><span class="acc-chev">›</span></summary>
+    <div class="acc-body">
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <input class="fi" id="dash-search" placeholder="🔍 ค้นหา รพ./ผู้แทน..." style="max-width:200px;font-size:12px;padding:5px 10px" oninput="filterDashTable()">
         <button class="bn bs bsm" onclick="exportCSV()">⬇ CSV</button>
         <button class="bn bp bsm" onclick="exportAllData()">⬇ Export ทั้งหมด</button>
+        <button class="bn bs bsm" onclick="showDetailModal('allRecords')">⛶ ขยายเต็มจอ</button>
       </div>
+      <div class="tw"><table><thead><tr><th>วันที่</th><th>เขต</th><th>ผู้แทน</th><th>โรงพยาบาล</th><th>New Opp</th><th>Demo</th><th>📍</th><th></th></tr></thead>
+      <tbody id="dtb"></tbody></table></div>
     </div>
-    <div class="tw"><table><thead><tr><th>วันที่</th><th>เขต</th><th>ผู้แทน</th><th>โรงพยาบาล</th><th>New Opp</th><th>Demo</th><th>📍</th><th></th></tr></thead>
-    <tbody id="dtb"></tbody></table></div>
+  </details>
   </div>
 </div>
 
 <!-- DETAIL MODAL -->
 <div id="detail-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center">
-  <div style="background:var(--s1);border:1px solid var(--b1);border-radius:14px;width:90%;max-width:800px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.5)">
+  <div style="background:var(--s1);border:1px solid var(--b1);border-radius:14px;width:95%;max-width:1100px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.5)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--b1)">
       <div class="ch" id="modal-title" style="margin:0"></div>
       <button onclick="closeModal()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:0 4px">✕</button>
@@ -893,7 +932,7 @@ function onOtherSelect(sel){
   let inp=document.getElementById('other_'+sel.id);
   if(!inp){inp=document.createElement('input');inp.id='other_'+sel.id;inp.type='text';inp.className='fi';inp.placeholder='พิมพ์ชื่อสินค้า...';inp.style.marginTop='6px';sel.parentNode.appendChild(inp);}
   inp.style.display='';inp.focus();
-  inp.oninput=()=>{sel.dataset.custom=inp.value;sd();};
+  inp.oninput=()=>{sel.dataset.custom=inp.value;sd();if(sel.id==='fdpd')toggleDemoResultReq();};
 }
 
 function getProductVal(selId){
@@ -1805,6 +1844,27 @@ function showDetailModal(type, extra){
       ${hRecs.slice().reverse().map(r=>`<tr><td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td><td><span class="tg tb2">${r.rep||'—'}</span></td><td>${r.dept||'—'}</td><td style="font-size:12px">${r.contactName||'—'}</td><td>${r.newOppProduct?`<span class="tg tg2">${r.newOppProduct}</span><br><span style="font-family:var(--mono);font-size:11px">${r.newOppPrice?Number(r.newOppPrice).toLocaleString()+' ฿':''}</span>`:'—'}</td><td>${r.demoProduct?`<span class="tg ta2">${r.demoProduct}</span>`:'—'}</td><td style="font-size:12px;color:var(--gn)">${r.demoResult||'—'}</td><td style="font-size:12px;color:var(--t2);max-width:180px">${r.detail||'—'}</td></tr>`).join('')}
     </tbody></table></div>`;
   }
+  else if(type==='allRecords'){
+    title.textContent='รายงานทั้งหมด (เต็มจอ) — '+recs.length+' รายการ';
+    const renderAll=(q)=>{
+      const qq=(q||'').toLowerCase();
+      const filtered=qq?recs.filter(r=>(r.hospital||'').toLowerCase().includes(qq)||(r.rep||'').toLowerCase().includes(qq)):recs;
+      return filtered.slice().reverse().map(r=>`<tr>
+        <td style="font-family:var(--mono);font-size:12px">${r.date||'—'}</td>
+        <td><span class="tg tb2">${r.zone||'—'}</span></td>
+        <td>${r.rep||'—'}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--acc)" onclick="showDetailModal('hospDetail','${escQ(r.hospital)}')">${r.hospital||'—'}</td>
+        <td>${r.dept||'—'}</td>
+        <td>${r.newOppProduct?`<span class="tg tg2">${r.newOppProduct}</span>`:'—'}</td>
+        <td>${r.demoProduct?`<span class="tg ta2">${r.demoProduct}</span>`:'—'}</td>
+        <td style="font-size:12px;color:var(--t2);max-width:200px">${r.detail||'—'}</td>
+      </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--t3)">ไม่พบข้อมูล</td></tr>';
+    };
+    body.innerHTML=`<input class="fi" id="allrec-search" placeholder="🔍 ค้นหา รพ./ผู้แทน..." style="margin-bottom:12px;max-width:280px" oninput="document.getElementById('allrec-body').innerHTML=window._renderAllRec(this.value)">
+    <div class="tw"><table><thead><tr><th>วันที่</th><th>เขต</th><th>ผู้แทน</th><th>โรงพยาบาล</th><th>แผนก</th><th>New Opp</th><th>Demo</th><th>รายละเอียด</th></tr></thead>
+    <tbody id="allrec-body">${renderAll('')}</tbody></table></div>`;
+    window._renderAllRec=renderAll;
+  }
   modal.style.display='flex';
   document.body.style.overflow='hidden';
 }
@@ -1921,6 +1981,7 @@ function renderDash(){
   const bc=['var(--acc)','var(--acc2)','var(--gn)','var(--pu)','var(--am)'];
   document.getElementById('drk').innerHTML=ra.length?ra.slice(0,5).map(([p,c],i)=>`<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--b1)"><div style="font-family:var(--mono);font-size:12px;color:var(--t3);width:16px">${i+1}</div><div style="flex:1;font-size:13px">${p}</div><div style="width:80px;height:14px;background:var(--s3);border-radius:4px;overflow:hidden"><div style="height:100%;width:${Math.round(c/mx*100)}%;background:${bc[i]}"></div></div><div style="font-family:var(--mono);font-size:12px;color:var(--t1);min-width:18px;text-align:right">${c}</div></div>`).join(''):'<div style="color:var(--t3);font-size:13px;padding:10px 0">ยังไม่มีข้อมูล</div>';
   document.getElementById('ddb').innerHTML=dR.slice(-20).reverse().map(r=>`<tr><td style="font-weight:500;font-size:13px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--acc)" onclick="showDetailModal('hospDetail','${escQ(r.hospital)}')" title="คลิกดูประวัติ รพ. นี้">${r.hospital||'—'}</td><td>${r.demoZone||r.dept||'—'}</td><td><span class="tg tb2">${r.demoProduct||'—'}</span></td><td><span class="tg tb2">${r.zone||'—'}</span></td><td>${r.rep||'—'}</td><td style="font-family:var(--mono);font-size:11px">${r.date||'—'}</td><td style="color:var(--gn);font-size:12px">${r.demoResult||'—'}</td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--t3)">ยังไม่มีข้อมูล</td></tr>';
+  const demoCountEl=document.getElementById('demo-count-sum'); if(demoCountEl) demoCountEl.textContent=dR.length;
   const rm={};recs.forEach(r=>{if(!r.rep)return;if(!rm[r.rep])rm[r.rep]={name:r.rep,zone:r.zone,v:new Set(),o:0,d:0,val:0};rm[r.rep].v.add(r.hospital);if(r.newOppProduct){rm[r.rep].o++;rm[r.rep].val+=parseFloat(r.newOppPrice)||0;}if(r.demoProduct)rm[r.rep].d++;});
   const ac=['var(--acc)','var(--gn)','var(--am)','var(--pu)','var(--acc2)','var(--rd)'];
   document.getElementById('drl').innerHTML=Object.values(rm).sort((a,b)=>b.o-a.o).map((r,i)=>`
@@ -1947,6 +2008,7 @@ function renderDash(){
 
   // New Opp detail (ข้อ 7)
   const oppDetail=recs.filter(r=>r.newOppProduct);
+  const oppCountEl=document.getElementById('opp-count-sum'); if(oppCountEl) oppCountEl.textContent=oppDetail.length;
   document.getElementById('opp-detail-body').innerHTML=oppDetail.length
     ?oppDetail.slice().reverse().map(r=>`<tr>
       <td style="font-weight:500;font-size:13px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--acc)" onclick="showDetailModal('hospDetail','${escQ(r.hospital)}')" title="คลิกดูประวัติ รพ. นี้">${r.hospital||'—'}</td>
