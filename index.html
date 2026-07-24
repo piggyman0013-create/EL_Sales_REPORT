@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>EL Sales — Earthline</title>
-<meta name="app-version" content="2026.05.20">
+<meta name="app-version" content="2026.07.24">
 <meta name="theme-color" id="tcm" content="#080f1e">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><defs><linearGradient id='g1' x1='0' y1='0' x2='0' y2='1'><stop offset='0%25' stop-color='%231d4ed8'/><stop offset='100%25' stop-color='%230369a1'/></linearGradient></defs><rect width='96' height='96' rx='22' fill='%23080f1e'/><path d='M48 14 L72 24 L72 52 C72 66 60 76 48 82 C36 76 24 66 24 52 L24 24 Z' fill='url(%23g1)' opacity='.9'/><path d='M48 20 L68 29 L68 52 C68 63 58 72 48 77 C38 72 28 63 28 52 L28 29 Z' fill='none' stroke='%2393c5fd' stroke-width='1' opacity='.5'/><text x='48' y='57' text-anchor='middle' font-size='22' font-weight='800' font-family='system-ui' fill='white' letter-spacing='-1'>EL</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><defs><linearGradient id='g1' x1='0' y1='0' x2='0' y2='1'><stop offset='0%25' stop-color='%231d4ed8'/><stop offset='100%25' stop-color='%230369a1'/></linearGradient></defs><rect width='96' height='96' rx='22' fill='%23080f1e'/><path d='M48 14 L72 24 L72 52 C72 66 60 76 48 82 C36 76 24 66 24 52 L24 24 Z' fill='url(%23g1)' opacity='.9'/><path d='M48 20 L68 29 L68 52 C68 63 58 72 48 77 C38 72 28 63 28 52 L28 29 Z' fill='none' stroke='%2393c5fd' stroke-width='1' opacity='.5'/><text x='48' y='57' text-anchor='middle' font-size='22' font-weight='800' font-family='system-ui' fill='white' letter-spacing='-1'>EL</text></svg>">
@@ -179,6 +179,11 @@ tr:hover td{background:var(--s2);color:var(--t1)}
   <div class="nb h" id="nb"><span style="font-size:18px">📋</span>
     <span id="nbt" style="color:var(--am);font-weight:500"></span>
     <button class="nbc" onclick="document.getElementById('nb').classList.add('h')">✕</button></div>
+  <div class="nb h" id="pending-badge" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3)">
+    <span style="font-size:18px">⏳</span>
+    <span style="color:var(--rd);font-weight:500" id="pending-badge-text"></span>
+    <button class="bn bs bsm" style="margin-left:auto" onclick="flushPending(true)">ลองส่งอีกครั้ง</button>
+  </div>
   <div class="di" id="di"></div>
 
   <div class="cd">
@@ -437,7 +442,7 @@ tr:hover td{background:var(--s2);color:var(--t1)}
 <!-- ADMIN -->
 <div class="pg" id="pg-admin">
   <div class="ptt">Admin — จัดการระบบ</div>
-  <div class="psb">ตั้งค่า GAS URL, จัดการ User, Line Notify, Audit Log</div>
+  <div class="psb">ตั้งค่า GAS URL, จัดการ User, ผู้ติดต่อโรงพยาบาล, Audit Log</div>
 
   <!-- Session Management -->
   <div class="cd">
@@ -468,17 +473,6 @@ tr:hover td{background:var(--s2);color:var(--t1)}
       <button class="bn bs bsm" onclick="testGas()">ทดสอบ</button>
     </div>
     <div id="gres" style="margin-top:10px;font-size:13px;color:var(--t3)"></div>
-  </div>
-  <div class="cd">
-    <div class="ch">🔔 Line Notify</div>
-    <div style="margin-bottom:12px"><label class="fl">Token จาก notify.line.me/my/</label>
-      <input class="fi" id="lnt" placeholder="วาง Token ที่นี่"></div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <button class="bn bp bsm" onclick="saveLn()">บันทึก Token</button>
-      <button class="bn bs bsm" onclick="testLn()">ทดสอบส่ง</button>
-      <a href="https://notify-bot.line.me/my/" target="_blank" style="font-size:12px;color:var(--acc2);text-decoration:none">→ รับ Token</a>
-    </div>
-    <div id="lnr" style="margin-top:10px;font-size:13px;color:var(--t3)"></div>
   </div>
   <div class="cd">
     <div class="ch">👤 จัดการ User</div>
@@ -522,6 +516,9 @@ tr:hover td{background:var(--s2);color:var(--t1)}
       <button class="bn bs bsm" onclick="document.getElementById('act-add').style.display=''">+ เพิ่มผู้ติดต่อ</button>
     </div>
   </div>
+
+  <div class="cd">
+    <div class="ch">📝 Audit Log (เครื่องนี้เท่านั้น)</div>
     <div class="tw"><table><thead><tr><th>เวลา</th><th>User</th><th>Action</th><th>รายละเอียด</th></tr></thead>
     <tbody id="alg"></tbody></table></div>
   </div>
@@ -562,10 +559,10 @@ async function loadConfig(){
 }
 
 // ─── APP VERSION — เปลี่ยนทุกครั้งที่ Deploy ใหม่ ───────────
-const APP_VERSION = '2026.05.22';
+const APP_VERSION = '2026.07.24';
 const VER_KEY = 'el_app_ver';
 const FORCE_LOGOUT_KEY = 'el_force_logout';
-const LNK='el_ln',UK='el_users',SK='el_sess',DK='el_draft',AK='el_audit';
+const UK='el_users',SK='el_sess',DK='el_draft',AK='el_audit';
 
 // USERS
 // ─── USER MANAGEMENT (GAS primary, localStorage fallback) ──
@@ -691,9 +688,11 @@ function doLogin(){
   };
 
   // ถ้ามี GAS URL — ดึงจาก Sheet เสมอ
+  // หมายเหตุ: ส่งผ่าน POST body เท่านั้น (ไม่ใช่ query string) เพื่อไม่ให้ password ไปโผล่ใน
+  // browser history / network logs / server access log — ต้องแน่ใจว่า Code.gs รองรับ
+  // action:'login' ใน doPost ด้วย (ดูรายละเอียดที่แนบให้แยกต่างหาก)
   if(GAS){
-    fetch(GAS+'?action=login&u='+encodeURIComponent(u)+'&p='+encodeURIComponent(p))
-      .then(r=>r.json())
+    apiP('login',{u,p})
       .then(r=>{
         if(r.ok){
           onLoginSuccess(r.user);
@@ -730,6 +729,9 @@ function doLogin(){
 }
 
 function onLoginSuccess(user){
+  // ป้องกันไว้ก่อน — ตัด password ออกจาก object ก่อนเก็บลง localStorage เสมอ
+  // เผื่อ backend (Code.gs) ลืมตัด field password ออกตอนตอบกลับ
+  if(user){delete user.p;delete user.password;}
   const rememberMe = document.getElementById('lrm')?.checked || false;
   setS(user, rememberMe);
   addA('LOGIN',user.u,'Role:'+user.role);
@@ -784,7 +786,7 @@ function initApp(){
   document.getElementById('un').textContent=CU.name;
   const dc=document.getElementById('ud');
   dc.className='ud '+(CU.role==='sales'?'ds':CU.role==='manager'?'dm':'da');
-  buildNav();chkDraftBanner();if(GAS)loadMaster();}
+  buildNav();chkDraftBanner();updatePendingBadge();if(GAS){loadMaster();flushPending(false);}}
 
 function buildNav(){
   const tabs=RT[CU.role]||RT.sales;
@@ -1302,9 +1304,15 @@ async function submitForm(){
     const r=await apiP('addRecord',data);
     if(!r.ok)throw new Error(r.error);
     addA('SUBMIT',CU?.u,`${data.hospital} | GPS:${locLabel}`);
-    sendLN(data);clearDraft();resetForm();
+    clearDraft();resetForm();
     toast('บันทึกรายงานสำเร็จ ✓' + (lat?` 📍 ${String(locLabel).split(',')[0]}`:''));
-  }catch(e){toast('บันทึกไม่สำเร็จ: '+e.message,true);}
+  }catch(e){
+    // เน็ตมีปัญหาหรือส่งไม่สำเร็จ — เก็บไว้ในเครื่อง ไม่ปล่อยให้ข้อมูลหาย จะลองส่งใหม่อัตโนมัติเมื่อเน็ตกลับมา
+    queuePending(data);
+    addA('SUBMIT_QUEUED',CU?.u,`${data.hospital} | ${e.message}`);
+    clearDraft();resetForm();
+    toast('เน็ตมีปัญหา — บันทึกข้อมูลไว้ในเครื่องแล้ว จะส่งอัตโนมัติเมื่อเน็ตกลับมา ⏳',true);
+  }
   finally{btn.disabled=false;btn.textContent='บันทึกรายงาน';}
 }
 
@@ -1375,9 +1383,40 @@ async function previewGPS() {
   }
   document.getElementById('gps-btn').disabled = false;
 }
-async function sendLN(d){const tok=localStorage.getItem(LNK);if(!tok)return;const msg=`\n📋 รายงานใหม่ — Earthline\n👤 ${d.rep} (${d.zone})\n🏥 ${d.hospital}\n📦 New Opp: ${d.newOppProduct||'-'}\n🧪 Demo: ${d.demoProduct||'-'}\n⏰ ${new Date().toLocaleString('th-TH')}`;try{await fetch('https://notify-api.line.me/api/notify',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/x-www-form-urlencoded'},body:'message='+encodeURIComponent(msg)});}catch(e){}}
-function saveLn(){const t=document.getElementById('lnt').value.trim();if(!t)return;localStorage.setItem(LNK,t);toast('บันทึก Token แล้ว');}
-async function testLn(){const tok=localStorage.getItem(LNK);if(!tok){toast('บันทึก Token ก่อน',true);return;}const r=document.getElementById('lnr');r.textContent='⏳ กำลังส่ง...';try{await fetch('https://notify-api.line.me/api/notify',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/x-www-form-urlencoded'},body:'message='+encodeURIComponent('\n✅ ทดสอบ Earthline Sales Notify สำเร็จ!')});r.textContent='✅ ส่งสำเร็จ';r.style.color='var(--gn)';}catch(e){r.textContent='❌ '+e.message;r.style.color='var(--rd)';}}
+// LINE Notify ถูกปิดบริการถาวรแล้ว (31 มี.ค. 2568) — เอาโค้ดเรียก notify-api.line.me ออกทั้งหมด
+// ยังไม่มีระบบแจ้งเตือนทดแทน — ถ้าต้องการ แนะนำทำผ่าน Email โดย GAS (MailApp.sendEmail) ฝั่ง backend
+
+// ═══ PENDING QUEUE — เก็บรายงานที่ส่งไม่สำเร็จ แล้ว retry อัตโนมัติ ═══
+const PENDING_KEY='el_pending_records';
+function getPending(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'[]');}catch(e){return [];}}
+function setPending(arr){localStorage.setItem(PENDING_KEY,JSON.stringify(arr));updatePendingBadge();}
+function queuePending(data){const arr=getPending();arr.push({data,ts:new Date().toISOString()});setPending(arr);}
+function updatePendingBadge(){
+  const n=getPending().length;
+  const b=document.getElementById('pending-badge');
+  const t=document.getElementById('pending-badge-text');
+  if(!b||!t)return;
+  if(n>0){t.textContent=`มีรายงานค้างส่ง ${n} รายการ (ระบบจะลองส่งอัตโนมัติเมื่อเน็ตกลับมา)`;b.classList.remove('h');}
+  else b.classList.add('h');
+}
+async function flushPending(manual=false){
+  const arr=getPending();
+  if(!arr.length){if(manual)toast('ไม่มีรายงานค้างส่ง');return;}
+  if(!GAS){if(manual)toast('ยังไม่ได้ตั้งค่า GAS URL',true);return;}
+  if(manual)toast('กำลังส่งรายงานที่ค้างอยู่ '+arr.length+' รายการ...');
+  const remain=[];
+  let sent=0;
+  for(const item of arr){
+    try{
+      const r=await apiP('addRecord',item.data);
+      if(r.ok)sent++;else remain.push(item);
+    }catch(e){remain.push(item);}
+  }
+  setPending(remain);
+  if(sent>0)toast(`ส่งรายงานที่ค้างอยู่สำเร็จ ${sent} รายการ ✓`);
+  else if(manual)toast('ยังส่งไม่สำเร็จ — จะลองใหม่อัตโนมัติเมื่อเน็ตกลับมา',true);
+}
+window.addEventListener('online',()=>flushPending(false));
 
 // DASHBOARD
 // ═══ MY REPORT ════════════════════════════════════════════
@@ -1916,7 +1955,6 @@ async function exportAllData(){
 // ADMIN
 function renderAdmin(){
   document.getElementById('gurl').value=GAS;
-  document.getElementById('lnt').value=localStorage.getItem(LNK)||'';
   // แสดง version
   const verEl = document.getElementById('app-ver-display');
   if(verEl) verEl.textContent = APP_VERSION;
