@@ -286,30 +286,47 @@ tr:hover td{background:var(--s2);color:var(--t1)}
     </div>
     <div class="fsc">รายละเอียดการทำงาน</div>
     <textarea class="ft gf" id="fdt" placeholder="บรรยายรายละเอียด..." onchange="sd()" style="width:100%"></textarea>
-    <div class="fsc" style="margin-top:16px">โอกาสทางการขายใหม่ (ถ้ามี)</div>
-    <div class="g2" style="margin-bottom:14px">
-      <div><label class="fl">สินค้า</label>
-        <select class="fs" id="fop" onchange="sd()"><option value="">-- เลือก --</option></select></div>
-      <div><label class="fl">ราคาประเมิน (บาท)</label>
-        <input class="fi" id="fpr" type="number" placeholder="0" onchange="sd()"></div>
-      <div><label class="fl">ประเภทงบ</label>
-        <select class="fs" id="fbg" onchange="sd()"><option value="">-- เลือก --</option></select></div>
-      <div><label class="fl">ปีงบประมาณ</label>
-        <input class="fi" id="ffs" type="number" placeholder="2568" onchange="sd()"></div>
-      <div><label class="fl">เดือนที่ส่งของ</label>
-        <select class="fs" id="fmn" onchange="sd()"><option value="">-- เลือก --</option></select></div>
-      <div><label class="fl">ปีที่ส่ง (ค.ศ.)</label>
-        <input class="fi" id="fyr" type="number" placeholder="2026" onchange="sd()"></div>
+    <div id="opp-toggle-wrap" style="margin-top:16px">
+      <button type="button" class="bn bs bsm" id="opp-toggle-btn" onclick="toggleOptSection('opp')">+ มีโอกาสทางการขายใหม่</button>
     </div>
-    <div class="fsc">Demo สินค้า (ถ้ามี)</div>
-    <div class="g2">
-      <div><label class="fl">แผนก Demo</label>
-        <select class="fs" id="fdz" onchange="sd()"><option value="">-- เลือก --</option></select></div>
-      <div><label class="fl">สินค้า Demo</label>
-        <select class="fs" id="fdpd" onchange="sd();toggleDemoResultReq()"><option value="">-- เลือก --</option></select></div>
-      <div class="gf"><label class="fl">ผลลัพธ์หลัง Demo<span class="r" id="fdr-star" style="display:none">*</span></label>
-        <textarea class="ft" id="fdr" style="min-height:60px;width:100%" onchange="sd();toggleDemoResultReq()"></textarea>
-        <span class="fe" id="edr">กรุณากรอกผลลัพธ์หลัง Demo เนื่องจากมีการเลือกสินค้า Demo</span></div>
+    <div id="opp-section" style="display:none;margin-top:14px">
+      <div class="fsc" style="display:flex;align-items:center;justify-content:space-between">
+        <span>โอกาสทางการขายใหม่ (ถ้ามี)</span>
+        <span style="cursor:pointer;color:var(--rd);font-family:'Sarabun',sans-serif;text-transform:none;letter-spacing:0;font-size:12px" onclick="toggleOptSection('opp',false)">✕ ไม่มี</span>
+      </div>
+      <div class="g2" style="margin-bottom:14px">
+        <div><label class="fl">สินค้า</label>
+          <select class="fs" id="fop" onchange="sd()"><option value="">-- เลือก --</option></select></div>
+        <div><label class="fl">ราคาประเมิน (บาท)</label>
+          <input class="fi" id="fpr" type="number" placeholder="0" onchange="sd()"></div>
+        <div><label class="fl">ประเภทงบ</label>
+          <select class="fs" id="fbg" onchange="sd()"><option value="">-- เลือก --</option></select></div>
+        <div><label class="fl">ปีงบประมาณ</label>
+          <input class="fi" id="ffs" type="number" placeholder="2568" onchange="sd()"></div>
+        <div><label class="fl">เดือนที่ส่งของ</label>
+          <select class="fs" id="fmn" onchange="sd()"><option value="">-- เลือก --</option></select></div>
+        <div><label class="fl">ปีที่ส่ง (ค.ศ.)</label>
+          <input class="fi" id="fyr" type="number" placeholder="2026" onchange="sd()"></div>
+      </div>
+    </div>
+
+    <div id="demo-toggle-wrap" style="margin-top:8px">
+      <button type="button" class="bn bs bsm" id="demo-toggle-btn" onclick="toggleOptSection('demo')">+ มีการ Demo สินค้า</button>
+    </div>
+    <div id="demo-section" style="display:none;margin-top:14px">
+      <div class="fsc" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Demo สินค้า (ถ้ามี)</span>
+        <span style="cursor:pointer;color:var(--rd);font-family:'Sarabun',sans-serif;text-transform:none;letter-spacing:0;font-size:12px" onclick="toggleOptSection('demo',false)">✕ ไม่มี</span>
+      </div>
+      <div class="g2">
+        <div><label class="fl">แผนก Demo</label>
+          <select class="fs" id="fdz" onchange="sd()"><option value="">-- เลือก --</option></select></div>
+        <div><label class="fl">สินค้า Demo</label>
+          <select class="fs" id="fdpd" onchange="sd();toggleDemoResultReq()"><option value="">-- เลือก --</option></select></div>
+        <div class="gf"><label class="fl">ผลลัพธ์หลัง Demo<span class="r" id="fdr-star" style="display:none">*</span></label>
+          <textarea class="ft" id="fdr" style="min-height:60px;width:100%" onchange="sd();toggleDemoResultReq()"></textarea>
+          <span class="fe" id="edr">กรุณากรอกผลลัพธ์หลัง Demo เนื่องจากมีการเลือกสินค้า Demo</span></div>
+      </div>
     </div>
   </div>
 
@@ -380,6 +397,10 @@ tr:hover td{background:var(--s2);color:var(--t1)}
     <div class="itile clk" style="cursor:pointer" onclick="showDetailModal('demo')"><div class="itile-badge" style="background:rgba(245,158,11,.14)">🖥️</div><div><div class="itile-val" id="kd" style="color:var(--am)">—</div><div class="itile-lbl">Demo ทั้งหมด</div></div></div>
     <div class="itile clk" style="cursor:pointer" onclick="showDetailModal('opp')"><div class="itile-badge" style="background:rgba(168,85,247,.14)">💰</div><div><div class="itile-val" id="kv" style="color:var(--pu)">—</div><div class="itile-lbl">มูลค่า New Opp.</div></div></div>
   </div>
+  <div style="background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:12px 16px;margin:-14px 0 24px;font-size:12.5px;color:var(--t2);display:flex;gap:10px;align-items:flex-start">
+    <span style="font-size:16px;flex-shrink:0">💡</span>
+    <span>ตัวเลขด้านบนคือ "ทั้งหมดตามช่วงที่เลือกไว้ด้านบน" ถ้าเลื่อนลงไปดูตาราง "เปรียบเทียบเดือนที่แล้ว/เดือนนี้" ตัวเลขอาจไม่เท่ากัน เพราะตารางนั้นแยกนับเป็นรายเดือน — ถ้าไปโรงพยาบาลเดียวกันทั้งสองเดือน จะถูกนับซ้ำในตารางเปรียบเทียบ แต่ตัวเลขด้านบนนับโรงพยาบาลซ้ำแค่ครั้งเดียว ไม่ใช่ข้อมูลผิดพลาดครับ</span>
+  </div>
 
   <div class="acc-panel">
   <details class="acc" open>
@@ -426,6 +447,11 @@ tr:hover td{background:var(--s2);color:var(--t1)}
   <details class="acc">
     <summary><span><span class="acc-ico">👥</span>สรุปรายผู้แทน — ผลงานประจำเดือน</span><span class="acc-chev">›</span></summary>
     <div class="acc-body"><div id="drl"></div></div>
+  </details>
+
+  <details class="acc">
+    <summary><span><span class="acc-ico">📊</span>เปรียบเทียบเดือนที่แล้ว / เดือนนี้ / ไตรมาสนี้</span><span class="acc-chev">›</span></summary>
+    <div class="acc-body"><div id="dcmp"></div></div>
   </details>
 
   <details class="acc">
@@ -1259,7 +1285,11 @@ function loadDraft(){
     ind.textContent='⚡ โหลด Draft ที่บันทึกเมื่อ '+label;
     ind.classList.add('on');
   }
-  setTimeout(toggleDemoResultReq, 350);
+  setTimeout(()=>{
+    if(document.getElementById('fop')?.value||document.getElementById('fpr')?.value)toggleOptSection('opp',true);
+    if(document.getElementById('fdz')?.value||document.getElementById('fdpd')?.value)toggleOptSection('demo',true);
+    toggleDemoResultReq();
+  }, 350);
 }
 
 function clearDraft(){localStorage.removeItem(DK);const i=document.getElementById('di');if(i)i.classList.remove('on');const s=document.getElementById('svd');if(s)s.textContent='';}
@@ -1268,6 +1298,29 @@ function chkDraftBanner(){const raw=localStorage.getItem(DK);if(!raw)return;cons
 
 // VALIDATE & SUBMIT
 function escQ(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function toggleOptSection(type,show){
+  const sec=document.getElementById(type+'-section');
+  const btn=document.getElementById(type+'-toggle-btn');
+  const wrap=document.getElementById(type+'-toggle-wrap');
+  if(!sec)return;
+  const willShow = show!==undefined ? show : sec.style.display==='none';
+  if(willShow){
+    sec.style.display='';
+    if(wrap)wrap.style.display='none';
+  } else {
+    sec.style.display='none';
+    if(wrap)wrap.style.display='';
+    // เคลียร์ค่าฟิลด์ในหัวข้อนี้เมื่อกด "ไม่มี" เพื่อไม่ให้มีข้อมูลค้างส่งโดยไม่ตั้งใจ
+    const ids = type==='opp' ? ['fop','fpr','fbg','ffs','fmn','fyr'] : ['fdz','fdpd','fdr'];
+    ids.forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      if(el.tagName==='SELECT')el.value='';else el.value='';
+    });
+    if(type==='demo')toggleDemoResultReq();
+    sd();
+  }
+}
 function toggleDemoResultReq(){
   const demoSel=document.getElementById('fdpd');
   const star=document.getElementById('fdr-star');
@@ -1414,6 +1467,8 @@ function resetForm(){
   document.querySelectorAll('.er').forEach(e=>e.classList.remove('er'));
   _gpsCache=null;
   setGpsUI('idle','ยังไม่ได้ดึงตำแหน่ง','ระบบจะขอ GPS อัตโนมัติเมื่อกดบันทึก');
+  toggleOptSection('opp',false);
+  toggleOptSection('demo',false);
   toggleDemoResultReq();
 }
 
@@ -1906,6 +1961,77 @@ function parseDate(str){
   return isNaN(d) ? null : d;
 }
 
+function renderPeriodComparison(){
+  const el=document.getElementById('dcmp');
+  if(!el)return;
+  const now=new Date();
+  const y=now.getFullYear(), m=now.getMonth();
+  const thisMonthStart=new Date(y,m,1);
+  const daysInThisMonth=new Date(y,m+1,0).getDate();
+  const dayOfMonth=now.getDate();
+  const lastMonthStart=new Date(y,m-1,1);
+  const lastMonthEnd=new Date(y,m,0,23,59,59);
+  const daysInLastMonth=lastMonthEnd.getDate();
+  // จุดตัด "วันเดียวกัน" ของเดือนที่แล้ว (กันกรณีเดือนที่แล้วมีวันน้อยกว่า เช่น ก.พ.)
+  const sameDayLastMonth=new Date(y,m-1,Math.min(dayOfMonth,daysInLastMonth),23,59,59);
+  const qStartMonth=Math.floor(m/3)*3;
+  const thisQStart=new Date(y,qStartMonth,1);
+
+  const bucket=(from,to)=>{
+    const rs=RECS.filter(r=>{const d=parseDate(r.date);return d&&!isNaN(d)&&d>=from&&d<=to;});
+    const hosp=new Set(rs.map(r=>r.hospital)).size;
+    const opp=rs.filter(r=>r.newOppProduct);
+    const demo=rs.filter(r=>r.demoProduct);
+    const val=opp.reduce((s,r)=>s+(parseFloat(r.newOppPrice)||0),0);
+    return {visits:rs.length,hosp,opp:opp.length,demo:demo.length,val};
+  };
+
+  const lmFull=bucket(lastMonthStart,lastMonthEnd);        // เดือนที่แล้ว เต็มเดือน (อ้างอิง)
+  const lmSameDay=bucket(lastMonthStart,sameDayLastMonth);  // เดือนที่แล้ว ถึงวันเดียวกัน (baseline ที่แฟร์)
+  const mtd=bucket(thisMonthStart,now);                     // เดือนนี้ ณ วันนี้
+  const tq=bucket(thisQStart,now);                          // ไตรมาสนี้ ถึงวันนี้
+
+  // ประมาณการสิ้นเดือนแบบ run-rate — ใช้เป็นตัวเลขอ้างอิงเสริมเท่านั้น (มีความคลาดเคลื่อนได้ถ้ากรอกกระจุกท้ายเดือน)
+  const runRate=daysInThisMonth/Math.max(dayOfMonth,1);
+  const fcVal=v=>Math.round(v*runRate);
+
+  const pctChip=(a,b)=>{
+    if(!b) return a?`<span style="color:var(--gn)">+ใหม่</span>`:'<span style="color:var(--t3)">—</span>';
+    const p=Math.round((a-b)/b*100);
+    const color=p>0?'var(--gn)':p<0?'var(--rd)':'var(--t3)';
+    return `<span style="color:${color};font-weight:600">${p>0?'+':''}${p}%</span>`;
+  };
+
+  const metrics=[
+    {label:'เข้าพบทั้งหมด',icon:'📅',lmFull:lmFull.visits,lmSD:lmSameDay.visits,mtd:mtd.visits,fc:fcVal(mtd.visits),fmt:v=>v},
+    {label:'โรงพยาบาลที่เข้าพบ',icon:'🏥',lmFull:lmFull.hosp,lmSD:lmSameDay.hosp,mtd:mtd.hosp,fc:fcVal(mtd.hosp),fmt:v=>v},
+    {label:'New Opportunity',icon:'💡',lmFull:lmFull.opp,lmSD:lmSameDay.opp,mtd:mtd.opp,fc:fcVal(mtd.opp),fmt:v=>v},
+    {label:'มูลค่า New Opp.',icon:'💰',lmFull:lmFull.val,lmSD:lmSameDay.val,mtd:mtd.val,fc:fcVal(mtd.val),fmt:v=>v.toLocaleString()+' ฿'},
+    {label:'Demo',icon:'🖥️',lmFull:lmFull.demo,lmSD:lmSameDay.demo,mtd:mtd.demo,fc:fcVal(mtd.demo),fmt:v=>v},
+  ];
+
+  el.innerHTML=`
+    <div style="font-size:12.5px;color:var(--t3);margin-bottom:14px;line-height:1.7">
+      💡 ตารางนี้ดูเดือนตามปฏิทินจริงเสมอ (เดือนที่แล้ว/เดือนนี้) <strong>ไม่เกี่ยวกับตัวกรองวันที่ด้านบนของหน้า</strong><br>
+      เทียบแบบ "ถึงวันที่เดียวกัน" คือเอาแค่ ${dayOfMonth} วันแรกของทั้งสองเดือนมาเทียบกัน เพื่อความยุติธรรม (เดือนนี้ยังไม่จบ จะเอาไปเทียบกับเดือนที่แล้วที่จบครบเดือนแล้วตรงๆ ไม่ได้)
+    </div>
+    <div style="font-size:12px;color:var(--t2);background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px 14px;margin-bottom:14px">
+      <strong>อ่านตารางนี้ยังไง:</strong> ดูช่อง "เดือนนี้ (ถึงวันนี้)" กับตัว % ข้างๆ — สีเขียว = ดีขึ้นกว่าช่วงเดียวกันเดือนที่แล้ว, สีแดง = น้อยกว่า
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      ${metrics.map(x=>`
+        <div style="display:grid;grid-template-columns:1.3fr repeat(3,1fr);gap:10px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--b1)">
+          <div style="font-size:14px">${x.icon} ${x.label}</div>
+          <div style="text-align:right"><div style="font-size:11px;color:var(--t3)">เดือนที่แล้ว ถึงวันที่ ${dayOfMonth}</div><div style="font-family:var(--mono);font-weight:600">${x.fmt(x.lmSD)}</div></div>
+          <div style="text-align:right"><div style="font-size:11px;color:var(--t3)">เดือนนี้ (ถึงวันนี้)</div><div style="font-family:var(--mono);font-weight:700">${x.fmt(x.mtd)} ${pctChip(x.mtd,x.lmSD)}</div></div>
+          <div style="text-align:right"><div style="font-size:11px;color:var(--t3)">เดือนที่แล้ว (เต็มเดือน)</div><div style="font-family:var(--mono);color:var(--t2)">${x.fmt(x.lmFull)}</div></div>
+        </div>`).join('')}
+    </div>
+    <div style="font-size:12px;color:var(--t3);margin-top:12px;line-height:1.6">
+      🔮 <strong>เดาไว้เฉยๆ ว่าสิ้นเดือนนี้จะได้ประมาณ:</strong> เข้าพบ ~${fcVal(mtd.visits)} · รพ. ~${fcVal(mtd.hosp)} · New Opp ~${fcVal(mtd.opp)} · มูลค่า ~${fcVal(mtd.val).toLocaleString()} ฿ · Demo ~${fcVal(mtd.demo)} (ตัวเลขนี้อาจคลาดเคลื่อนได้ ไม่ต้องยึดเป็นตัวจริง)<br>
+      📊 ไตรมาสนี้ถึงวันนี้ (3 เดือนรวมกัน): เข้าพบ ${tq.visits} ครั้ง · รพ. ${tq.hosp} แห่ง · New Opp ${tq.opp} · มูลค่า ${tq.val.toLocaleString()} ฿ · Demo ${tq.demo}
+    </div>`;
+}
 function renderDash(){
   const now=new Date();
 
@@ -2024,6 +2150,7 @@ function renderDash(){
   // Focus hosp table — ใช้ RECS ทั้งหมด ไม่ filter period
   // เพราะอยากเห็นว่าเข้าพบ รพ.โฟกัสไปแล้วกี่แห่งทั้งหมด
   renderFocusHospTable(RECS);
+  renderPeriodComparison();
 }
 
 function exportCSV(){
