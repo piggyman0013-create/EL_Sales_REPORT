@@ -365,11 +365,11 @@ tr:hover td{background:var(--s2);color:var(--t1)}
       </div>
       <div>
         <label class="fl" style="font-size:11px">ช่วงวันที่ (เริ่ม)</label>
-        <input class="fi" type="date" id="df-from" onchange="loadDash()">
+        <input class="fi" type="date" id="df-from" onchange="loadDash()" disabled>
       </div>
       <div>
         <label class="fl" style="font-size:11px">ช่วงวันที่ (ถึง)</label>
-        <input class="fi" type="date" id="df-to" onchange="loadDash()">
+        <input class="fi" type="date" id="df-to" onchange="loadDash()" disabled>
       </div>
       <div>
         <label class="fl" style="font-size:11px">สินค้า</label>
@@ -1783,7 +1783,9 @@ function resetDashFilter(){
   document.getElementById('dz').value='';
   document.getElementById('dr').innerHTML='<option value="">ทุกคน</option>';
   document.getElementById('df-from').value='';
+  document.getElementById('df-from').disabled=true;
   document.getElementById('df-to').value='';
+  document.getElementById('df-to').disabled=true;
   document.getElementById('df-prod').value='';
   document.getElementById('dash-search').value='';
   document.querySelectorAll('.pt').forEach(t=>t.classList.remove('on'));
@@ -1822,15 +1824,21 @@ function setPer(p,btn){
   curPer=p;
   document.querySelectorAll('.pt').forEach(t=>t.classList.remove('on'));
   btn.classList.add('on');
+  const fromEl=document.getElementById('df-from');
+  const toEl=document.getElementById('df-to');
   if(p==='custom'){
-    const fromEl=document.getElementById('df-from');
-    const toEl=document.getElementById('df-to');
     if(!fromEl.value||!toEl.value){
       const now=new Date();
       toEl.value=now.toISOString().split('T')[0];
       const from=new Date(now);from.setDate(from.getDate()-30);
       fromEl.value=from.toISOString().split('T')[0];
     }
+    fromEl.disabled=false; toEl.disabled=false;
+  } else {
+    // ล้างค่าเก่าที่ค้างอยู่ในช่องวันที่ — กันสับสนเพราะช่วงจริงที่ใช้คำนวณ
+    // มาจาก "เดือนนี้/อาทิตย์นี้" ไม่ใช่ค่าที่ค้างอยู่ในช่องนี้แล้ว
+    fromEl.value=''; toEl.value='';
+    fromEl.disabled=true; toEl.disabled=true;
   }
   renderDash();
 }
